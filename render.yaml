@@ -1,7 +1,7 @@
 services:
   - type: web
     name: frkt-bsu
-    runtime: static
+    env: static
     buildCommand: pnpm install --frozen-lockfile && pnpm build:full
     staticPublishPath: out
     pullRequestPreviewsEnabled: false
