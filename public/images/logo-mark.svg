@@ -1,0 +1,55 @@
+<svg viewBox="0 0 120 36" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Left input terminal -->
+  <rect x="1" y="15" width="8" height="6" rx="1"
+    fill="white" fill-opacity="0.12"
+    stroke="white" stroke-opacity="0.45" stroke-width="1"/>
+  <line x1="9" y1="18" x2="15" y2="18"
+    stroke="white" stroke-opacity="0.45" stroke-width="1.2"/>
+
+  <!-- Sine wave — 2 full cycles, period 40, amplitude 9, centre y=18 -->
+  <path
+    d="M15,18 C18.3,9 31.7,9 35,18
+       C38.3,27 51.7,27 55,18
+       C58.3,9  71.7,9  75,18
+       C78.3,27 91.7,27 95,18"
+    stroke="#1A56DB" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Top PCB bus: horizontal rail connecting peak traces -->
+  <line x1="20" y1="4" x2="70" y2="4"
+    stroke="white" stroke-opacity="0.22" stroke-width="1"/>
+  <!-- Branch down to peak 1 (x=25) -->
+  <line x1="25" y1="4" x2="25" y2="9"
+    stroke="white" stroke-opacity="0.4" stroke-width="1"/>
+  <!-- Branch down to peak 2 (x=65) -->
+  <line x1="65" y1="4" x2="65" y2="9"
+    stroke="white" stroke-opacity="0.4" stroke-width="1"/>
+
+  <!-- Bottom PCB bus: horizontal rail connecting trough traces -->
+  <line x1="41" y1="32" x2="89" y2="32"
+    stroke="white" stroke-opacity="0.22" stroke-width="1"/>
+  <!-- Branch up to trough 1 (x=45) -->
+  <line x1="45" y1="27" x2="45" y2="32"
+    stroke="white" stroke-opacity="0.4" stroke-width="1"/>
+  <!-- Branch up to trough 2 (x=85) -->
+  <line x1="85" y1="27" x2="85" y2="32"
+    stroke="white" stroke-opacity="0.4" stroke-width="1"/>
+
+  <!-- Circuit nodes at wave peaks -->
+  <circle cx="25" cy="9"  r="2.6" fill="#1A56DB" stroke="white" stroke-width="1.1"/>
+  <circle cx="65" cy="9"  r="2.6" fill="#1A56DB" stroke="white" stroke-width="1.1"/>
+  <!-- Circuit nodes at wave troughs -->
+  <circle cx="45" cy="27" r="2.6" fill="#1A56DB" stroke="white" stroke-width="1.1"/>
+  <circle cx="85" cy="27" r="2.6" fill="#1A56DB" stroke="white" stroke-width="1.1"/>
+
+  <!-- Zero-crossing accent dots -->
+  <circle cx="55" cy="18" r="1.4" fill="white" fill-opacity="0.7"/>
+  <circle cx="35" cy="18" r="1"   fill="white" fill-opacity="0.35"/>
+  <circle cx="75" cy="18" r="1"   fill="white" fill-opacity="0.35"/>
+
+  <!-- Right output terminal -->
+  <line x1="95" y1="18" x2="111" y2="18"
+    stroke="white" stroke-opacity="0.45" stroke-width="1.2"/>
+  <rect x="111" y="15" width="8" height="6" rx="1"
+    fill="white" fill-opacity="0.12"
+    stroke="white" stroke-opacity="0.45" stroke-width="1"/>
+</svg>

@@ -44,11 +44,11 @@ const LABS = [
 const SCHOOLS = [
   {
     title: 'Физика полупроводников и материаловедение',
-    href: '/science/schools/semiconductor',
+    href: '/science/school-semiconductor',
   },
   {
     title: 'Радиофизика и информатика',
-    href: '/science/schools/informatics',
+    href: '/science/school-informatics',
   },
 ]
 

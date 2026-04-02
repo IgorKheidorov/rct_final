@@ -114,7 +114,14 @@ export default function Header() {
             href="/"
             className={`flex items-center gap-3 shrink-0 group rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${OFFSET}`}
           >
-            <span className="w-2 h-8 bg-accent" aria-hidden="true" />
+            <Image
+              src="/images/logo-mark.svg"
+              alt="Логотип ФРКТ БГУ"
+              width={120}
+              height={36}
+              className="opacity-90 group-hover:opacity-100 transition-opacity select-none"
+              aria-hidden="true"
+            />
             <span className="font-display font-semibold text-white text-xl leading-none tracking-tight group-hover:text-accent transition-colors">
               ФРКТ
               <span className="font-body font-medium text-white/50 text-xs ml-1.5 tracking-normal">
