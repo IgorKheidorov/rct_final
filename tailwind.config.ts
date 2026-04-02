@@ -20,6 +20,10 @@ const config: Config = {
       letterSpacing: {
         label: '0.2em',
       },
+      borderRadius: {
+        /** Карточки и группы списков (Обучение и др.) */
+        card: '6px',
+      },
       typography: ({ theme }: { theme: (key: string) => string }) => ({
         DEFAULT: {
           css: {
@@ -82,7 +86,16 @@ const config: Config = {
             },
             'ul > li::marker': { color: theme('colors.accent') },
             'ol > li::marker': { color: theme('colors.text-muted') },
-            li: { marginTop: '0.25rem', marginBottom: '0.25rem' },
+            li: {
+              marginTop: '0.35rem',
+              marginBottom: '0.35rem',
+              lineHeight: '1.65',
+            },
+            p: {
+              lineHeight: '1.75',
+              marginTop: '0.75em',
+              marginBottom: '0.75em',
+            },
           },
         },
       }),

@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/retry-next-build.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "copy-assets": "node scripts/copy-assets.js",
     "migrate-content": "node scripts/migrate-content.js",
     "index-search": "npx pagefind --site out --output-path public/pagefind",
-    "build:full": "node scripts/copy-assets.js && next build && npx pagefind --site out --output-path public/pagefind",
+    "build:full": "node scripts/copy-assets.js && node scripts/retry-next-build.mjs && npx pagefind --site out --output-path public/pagefind",
     "validate-links": "npx serve out -p 3000 & npx broken-link-checker http://localhost:3000 -ro"
   },
   "dependencies": {

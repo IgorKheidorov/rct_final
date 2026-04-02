@@ -10,16 +10,26 @@ export const metadata: Metadata = {
   description: 'Руководство факультета радиофизики и компьютерных технологий БГУ.',
 }
 
+/** Статический экспорт: страница только SSG, без динамики на сервере. */
+export const dynamic = 'force-static'
+
 function readContent(filename: string): string {
-  const filePath = path.join(process.cwd(), 'src', 'content', filename)
-  if (!fs.existsSync(filePath)) return ''
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  const { content } = matter(raw)
-  return content
+  try {
+    const filePath = path.join(process.cwd(), 'src', 'content', filename)
+    if (!fs.existsSync(filePath)) return ''
+    const raw = fs.readFileSync(filePath, 'utf-8')
+    const { content } = matter(raw)
+    return content
+  } catch {
+    return ''
+  }
 }
 
+/** Чтение один раз при загрузке модуля (сборка / prerender), не в теле рендера. */
+const mdxBody = readContent('faculty_administration.mdx')
+
 export default function AdministrationPage() {
-  const content = readContent('faculty_administration.mdx')
+  const content = mdxBody
 
   return (
     <div data-pagefind-body>
