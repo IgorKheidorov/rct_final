@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Search, Menu, X, ChevronDown } from 'lucide-react'
 
 import { useSearchContext } from '@/components/search/SearchContext'
@@ -29,8 +30,31 @@ const NAV_LINKS: NavLink[] = [
       { label: 'Магистратура', href: '/programs/master' },
     ],
   },
-  { label: 'Абитуриентам', href: '/admissions' },
-  { label: 'Обучение', href: '/education' },
+  {
+    label: 'Абитуриентам',
+    href: '/admissions',
+    children: [
+      { label: 'Плановый набор', href: '/admissions#places' },
+      { label: 'Вступительные испытания', href: '/admissions#requirements' },
+      { label: 'Целевой приём', href: '/admissions#targeted' },
+      { label: 'Документы', href: '/admissions#documents' },
+      { label: 'Дни открытых дверей', href: '/admissions#open-days' },
+      { label: 'Общежитие', href: '/admissions#dormitory' },
+      { label: 'Международный приём', href: '/admissions#international' },
+      { label: 'Военная кафедра', href: '/admissions#military' },
+    ],
+  },
+  {
+    label: 'Обучение',
+    href: '/education',
+    children: [
+      { label: 'Расписание', href: '/education#schedules' },
+      { label: 'Экзаменационные сессии', href: '/education#exams' },
+      { label: 'Учебный календарь', href: '/education#calendar' },
+      { label: 'Шаблоны и инструкции', href: '/education#documents' },
+      { label: 'Полезные ссылки', href: '/education#resources' },
+    ],
+  },
   {
     label: 'Наука',
     href: '/science',

@@ -6,10 +6,9 @@ import Link from 'next/link'
 
 import type { NewsItem } from '@/lib/types'
 
-const TAGS = ['Все', 'enrollee', 'media', 'students', 'events', 'science']
+const TAGS = ['enrollee', 'media', 'students', 'events', 'science']
 
 const TAG_LABELS: Record<string, string> = {
-  Все: 'Все',
   enrollee: 'Абитуриентам',
   media: 'Медиа',
   students: 'Студентам',
@@ -29,21 +28,28 @@ interface NewsFiltersProps {
 }
 
 export default function NewsFilters({ items }: NewsFiltersProps) {
-  const [activeTag, setActiveTag] = useState('Все')
+  const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
 
-  const filtered = activeTag === 'Все' ? items : items.filter((n) => n.tags.includes(activeTag))
+  const filtered = activeTags.size === 0
+    ? items
+    : items.filter((n) => n.tags.some((t) => activeTags.has(t)))
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
-  const handleTag = useCallback(
-    (tag: string) => {
-      setActiveTag(tag)
-      setPage(1)
-    },
-    [],
-  )
+  const handleTag = useCallback((tag: string) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev)
+      if (next.has(tag)) {
+        next.delete(tag)
+      } else {
+        next.add(tag)
+      }
+      return next
+    })
+    setPage(1)
+  }, [])
 
   return (
     <div>
@@ -55,7 +61,7 @@ export default function NewsFilters({ items }: NewsFiltersProps) {
             onClick={() => handleTag(tag)}
             className={[
               'font-body text-xs uppercase tracking-label px-4 py-2 border transition-colors duration-200',
-              activeTag === tag
+              activeTags.has(tag)
                 ? 'bg-accent text-white border-accent'
                 : 'border-border-col text-text-secondary hover:border-accent hover:text-accent',
             ].join(' ')}
@@ -65,10 +71,20 @@ export default function NewsFilters({ items }: NewsFiltersProps) {
         ))}
       </div>
 
-      {/* Count */}
-      <p className="font-body text-xs text-text-muted uppercase tracking-label mb-6">
-        {filtered.length} материалов
-      </p>
+      {/* Count + reset */}
+      <div className="flex items-center gap-4 mb-6">
+        <p className="font-body text-xs text-text-muted uppercase tracking-label">
+          {filtered.length} материалов
+        </p>
+        {activeTags.size > 0 && (
+          <button
+            onClick={() => { setActiveTags(new Set()); setPage(1) }}
+            className="font-body text-xs uppercase tracking-label text-accent hover:underline"
+          >
+            Сбросить
+          </button>
+        )}
+      </div>
 
       {/* News grid */}
       {paginated.length > 0 ? (
