@@ -1,0 +1,1882 @@
+system "RCFT_BSU_V2":
+  version = "2.0.0"
+  description = "Рефакторинг сайта ФРКТ БГУ. Next.js 14 SSG, Концепция E (Geometric Modernist), полное сохранение контента, контекстный поиск Pagefind."
+  source_reference = "https://rct.bsu.by/"
+  paper_design_artboard = "FM-0"
+
+  stack:
+    language = "TypeScript"
+    framework = "Next.js 14 (App Router, output: export)"
+    styling = "Tailwind CSS v3"
+    content = "MDX (next-mdx-remote — использовать import из 'next-mdx-remote/rsc' для App Router RSC)"
+    search = "Pagefind (static full-text, indexed at build time)"
+    animations = "Framer Motion (subtle, performance-safe)"
+    icons = "Lucide React"
+    fonts = ["Archivo Black (@fontsource/archivo-black)", "Inter (@fontsource/inter)"]
+    node_version = ">=20"
+    package_manager = "pnpm"
+
+  implementation_notes:
+    mdx_import = "ОБЯЗАТЕЛЬНО: import { MDXRemote } from 'next-mdx-remote/rsc' (НЕ из 'next-mdx-remote'). App Router RSC требует /rsc субпакет."
+    image_src   = "ОБЯЗАТЕЛЬНО: в JSX src для изображений — '/images/foo.jpg', НЕ 'public/images/foo.jpg'. next/image не принимает пути с 'public/'."
+    static_params = "ОБЯЗАТЕЛЬНО: каждый [slug] и [track] маршрут должен экспортировать generateStaticParams(). Без этого next build с output:'export' упадёт."
+    redirects   = "ВАЖНО: redirects() в next.config.js не работают с output:'export'. Реализовать через src/middleware.ts (см. migration_notes.redirects_implementation)."
+    tailwind_v3 = "Tailwind CSS v3. НЕ v4. Конфиг: tailwind.config.ts с content: ['./src/**/*.{ts,tsx,mdx}']."
+    pagefind    = "Pagefind индексируется ПОСЛЕ next build: npx pagefind --site out --output-path public/pagefind. В dev-режиме поиск не работает."
+    fonts       = "Шрифты через @fontsource: 'import @fontsource/archivo-black' и 'import @fontsource/inter' в globals.css. НЕ Google Fonts CDN."
+
+  intent:
+    primary = "Полный редизайн сайта ФРКТ БГУ: современный стек, дизайн Концепция E, 100% контента, контекстный поиск"
+    outcomes:
+      - "Весь оригинальный контент (тексты, PDF, изображения) сохранён и доступен"
+      - "Дизайн Концепция E: #1C1C1E графит, #1A56DB электрик, Archivo Black + Inter"
+      - "Полнотекстовый контекстный поиск Pagefind по всему сайту"
+      - "Все внутренние ссылки валидированы и работают"
+      - "Редиректы со старых URL (enrollee→admissions, specialties→programs)"
+      - "Mobile-first, адаптивный (breakpoints: 640/768/1024/1280px)"
+      - "Lighthouse ≥ 90 по всем метрикам"
+      - "SEO: title, meta description, OG, JSON-LD, sitemap.xml, robots.txt"
+      - "Статическая сборка (next export) — деплой на любой веб-сервер"
+
+  # ─── ДИЗАЙН-СИСТЕМА ────────────────────────────────────────────────────────
+
+  design_system:
+    name = "Concept E — Geometric Modernist"
+    reference_artboard = "FM-0 в Paper"
+
+    colors:
+      bg_primary = "#1C1C1E"
+      bg_section = "#141416"
+      bg_card = "#1C1C1E"
+      accent = "#1A56DB"
+      text_primary = "#FFFFFF"
+      text_secondary = "#8A8A8E"
+      text_muted = "#6B6B70"
+      border = "#2C2C2E"
+      divider = "#2C2C2E"
+
+    typography:
+      display_font = "Archivo Black"
+      body_font = "Inter"
+      display_sizes = "48–80px, line-height 0.95–1.05, letter-spacing -0.02em"
+      h2_size = "36px"
+      h3_size = "24px"
+      body_size = "16px, line-height 1.75"
+      caption_size = "13px"
+      label_size = "11px, uppercase, letter-spacing 0.2em"
+
+    patterns:
+      section_label = "// UPPERCASE TEXT — Inter 11px, #1A56DB, letter-spacing 0.2em"
+      accent_bar = "width:40px height:3px bg:#1A56DB — декоративный разделитель"
+      card_gap = "2px между карточками (не margin)"
+      section_padding = "80px вертикальный, 80px горизонтальный"
+      hover_highlight = "одна карточка в сетке bg:#1A56DB для акцента"
+      external_link_icon = "↗ или иконка Lucide ExternalLink"
+
+    tokens_file = "tailwind.config.ts"
+    tokens:
+      colors:
+        "bg-primary": "#1C1C1E"
+        "bg-section": "#141416"
+        "accent": "#1A56DB"
+        "text-primary": "#FFFFFF"
+        "text-secondary": "#8A8A8E"
+        "text-muted": "#6B6B70"
+        "border-default": "#2C2C2E"
+      fontFamily:
+        "display": ["Archivo Black", "sans-serif"]
+        "body": ["Inter", "sans-serif"]
+
+  # ─── АРХИТЕКТУРА ────────────────────────────────────────────────────────────
+
+  architecture:
+    pattern = "JAMstack — Next.js App Router SSG"
+
+    directory:
+      "src/app/"                    = "Next.js App Router — страницы и layouts"
+      "src/components/"             = "Переиспользуемые React-компоненты"
+      "src/components/layout/"      = "Header, Footer, Layout wrapper"
+      "src/components/sections/"    = "Section-компоненты страниц"
+      "src/components/ui/"          = "Атомарные компоненты (Button, Card, Tag)"
+      "src/components/search/"      = "SearchBar, SearchOverlay, SearchResultsPage"
+      "src/content/"                = "MDX-файлы контента"
+      "src/content/news/"           = "MDX-статьи новостей"
+      "src/content/departments/"    = "MDX по кафедрам (основные файлы + sub-файлы вида {slug}-staff.mdx)"
+      "src/content/programs/"       = "MDX по специальностям"
+      "src/content/programs/bachelor/" = "MDX по специальностям бакалавриата + трек-страницы"
+      "src/content/programs/master/"   = "MDX по специальностям магистратуры"
+      "src/content/admissions/"     = "MDX по поступлению на каждую специальность"
+      "src/content/science/"        = "MDX научных школ"
+      "src/lib/"                    = "Утилиты, хелперы, типы"
+      "src/styles/"                 = "globals.css, Tailwind директивы"
+      "public/"                     = "Статические файлы"
+      "public/images/"              = "Все изображения (скопировать из old_site)"
+      "public/images/partners/"     = "Логотипы партнёров"
+      "public/docs/"                = "PDF-документы"
+      "public/pagefind/"            = "Pagefind-индекс (генерируется при сборке)"
+      "scripts/"                    = "migrate-content.js, validate-links.js"
+
+    routes:
+      - path = "/"
+        file = "src/app/page.tsx"
+      - path = "/faculty"
+        file = "src/app/faculty/page.tsx"
+      - path = "/faculty/departments"
+        file = "src/app/faculty/departments/page.tsx"
+      - path = "/faculty/departments/[slug]"
+        file = "src/app/faculty/departments/[slug]/page.tsx"
+        params = ["rdmt","qro","physelnano","ics","kis","teleit","sacm","phaerotech"]
+      - path = "/faculty/staff"
+        file = "src/app/faculty/staff/page.tsx"
+      - path = "/faculty/administration"
+        file = "src/app/faculty/administration/page.tsx"
+      - path = "/faculty/council"
+        file = "src/app/faculty/council/page.tsx"
+      - path = "/programs"
+        file = "src/app/programs/page.tsx"
+      - path = "/programs/bachelor"
+        file = "src/app/programs/bachelor/page.tsx"
+      - path = "/programs/bachelor/[slug]"
+        file = "src/app/programs/bachelor/[slug]/page.tsx"
+        params = ["rphit","ai","cs","ie"]
+      - path = "/programs/bachelor/[slug]/[track]"
+        file = "src/app/programs/bachelor/[slug]/[track]/page.tsx"
+        note = "Единый вложенный маршрут для всех треков. Next.js App Router: [slug]/page.tsx и [slug]/[track]/page.tsx сосуществуют."
+        params:
+          rphit: ["aero","inform","kptms","fpkt","rdt"]
+          ai:    ["ics","bd"]
+          cs:    ["cs"]
+          ie:    ["ie"]
+      - path = "/programs/master"
+        file = "src/app/programs/master/page.tsx"
+      - path = "/programs/master/[slug]"
+        file = "src/app/programs/master/[slug]/page.tsx"
+        params = ["rfitm","cs-mag","aerocos"]
+      - path = "/admissions"
+        file = "src/app/admissions/page.tsx"
+      - path = "/admissions/[specialty]"
+        file = "src/app/admissions/[specialty]/page.tsx"
+        params = ["rphit","ai","cs","inelec","rfitm","cs-mag","aerot"]
+      - path = "/education"
+        file = "src/app/education/page.tsx"
+      - path = "/science"
+        file = "src/app/science/page.tsx"
+      - path = "/science/conferences"
+        file = "src/app/science/conferences/page.tsx"
+      - path = "/science/labs"
+        file = "src/app/science/labs/page.tsx"
+      - path = "/science/schools/[slug]"
+        file = "src/app/science/schools/[slug]/page.tsx"
+        params = ["semiconductor","informatics"]
+      - path = "/news"
+        file = "src/app/news/page.tsx"
+      - path = "/news/[slug]"
+        file = "src/app/news/[slug]/page.tsx"
+        params = "dynamic from src/content/news/*.mdx filenames"
+      - path = "/contacts"
+        file = "src/app/contacts/page.tsx"
+      - path = "/search"
+        file = "src/app/search/page.tsx"
+
+    redirects:
+      file = "next.config.js → redirects()"
+      rules:
+        - from = "/enrollee"
+          to = "/admissions"
+          permanent = true
+        - from = "/enrollee/:path*"
+          to = "/admissions/:path*"
+          permanent = true
+        - from = "/specialties"
+          to = "/programs"
+          permanent = true
+        - from = "/specialties/:path*"
+          to = "/programs/bachelor/:path*"
+          permanent = true
+        - from = "/cookieCons"
+          to = "/"
+          permanent = false
+
+  # ─── АССЕТЫ ─────────────────────────────────────────────────────────────────
+
+  assets:
+    images:
+      source = "old_site/assets/images/"
+      dest = "public/images/"
+      note = "Копировать все файлы. next/image обеспечит оптимизацию WebP + lazy load."
+      files:
+        - src = "old_site/assets/images/logo.svg"
+          dest = "public/images/logo.svg"
+        - src = "old_site/assets/images/faculty_building.jpg"
+          dest = "public/images/faculty_building.jpg"
+        - src = "old_site/assets/images/banner_open_house_march28.jpg"
+          dest = "public/images/banner_open_house_march28.jpg"
+        - src = "old_site/assets/images/banner_robocup_asia_pacific_2025.jpg"
+          dest = "public/images/banner_robocup_asia_pacific_2025.jpg"
+        - src = "old_site/assets/images/specialty_aerospace.jpg"
+          dest = "public/images/specialty_aerospace.jpg"
+        - src = "old_site/assets/images/specialty_informatics.jpg"
+          dest = "public/images/specialty_informatics.jpg"
+        - src = "old_site/assets/images/specialty_microelectronics.jpg"
+          dest = "public/images/specialty_microelectronics.jpg"
+        - src = "old_site/assets/images/specialty_photonics.jpg"
+          dest = "public/images/specialty_photonics.jpg"
+        - src = "old_site/assets/images/specialty_digital_tech.jpg"
+          dest = "public/images/specialty_digital_tech.jpg"
+        - src = "old_site/assets/images/specialty_intelligent_systems.jpg"
+          dest = "public/images/specialty_intelligent_systems.jpg"
+        - src = "old_site/assets/images/specialty_bioinformatics.jpg"
+          dest = "public/images/specialty_bioinformatics.jpg"
+        - src = "old_site/assets/images/specialty_cybersecurity.jpg"
+          dest = "public/images/specialty_cybersecurity.jpg"
+        - src = "old_site/assets/images/specialty_intelligent_electronics.jpg"
+          dest = "public/images/specialty_intelligent_electronics.jpg"
+        - src = "old_site/assets/images/masters_program_1.jpg"
+          dest = "public/images/masters_program_1.jpg"
+        - src = "old_site/assets/images/masters_program_2.jpg"
+          dest = "public/images/masters_program_2.jpg"
+        - src = "old_site/assets/images/masters_aerospace.jpg"
+          dest = "public/images/masters_aerospace.jpg"
+
+    partner_logos:
+      source = "old_site/assets/images/partners/"
+      dest = "public/images/partners/"
+      files:
+        - { name: "LeverX",         file: "leverx.png",        url: "https://leverx.com" }
+        - { name: "EPAM",            file: "epam.png",          url: "https://epam.com" }
+        - { name: "ITransition",     file: "itransition.png",   url: "https://itransition.com" }
+        - { name: "NTLab",           file: "ntlab.png",         url: "https://ntlab.com" }
+        - { name: "Aristek Systems", file: "aristek.svg",       url: "https://aristeksystems.com" }
+        - { name: "Abiatec",         file: "abiatec.svg",       url: "https://abiatec.com" }
+        - { name: "Effective Soft",  file: "effective_soft.png",url: "https://effectivesoft.com" }
+        - { name: "D-Link",          file: "d-link.png",        url: "https://dlink.ru" }
+        - { name: "ПВТ (HTP)",       file: "htp.jpg",           url: "https://park.by" }
+
+    documents:
+      source = "old_site/ (любые PDF и DOCX)"
+      dest = "public/docs/"
+      required:
+        - "admission_rules_2026.pdf"
+        - "bsu_admission_procedure_2025.pdf"
+        - "rcft_admission_features_2025.pdf"
+        - "preferential_categories.pdf"
+        - "diploma_template.docx"
+        - "coursework_title.docx"
+        - "diploma_title.docx"
+        - "coursework_assignment.docx"
+        - "diploma_assignment.docx"
+        - "syllabi/bachelor_*.pdf (все учебные программы)"
+        - "syllabi/master_*.pdf"
+
+  # ─── LAYOUT ──────────────────────────────────────────────────────────────────
+
+  module Layout:
+    file = "src/app/layout.tsx"
+    owns = ["<html>", "<head>", "Header", "Footer", "SearchOverlay"]
+
+    head:
+      charset = "UTF-8"
+      viewport = "width=device-width, initial-scale=1.0"
+      theme_color = "#1C1C1E"
+      analytics:
+        - type = "Google Analytics"
+          id = "G-LXPCYWCCZV"
+          impl = "gtag.js через next/script strategy='afterInteractive'"
+        - type = "Yandex Metrica"
+          id = "88540556"
+          impl = "next/script strategy='afterInteractive'"
+
+    header:
+      file = "src/components/layout/Header.tsx"
+      bg = "#1C1C1E"
+      height = "72px"
+      border_bottom = "1px solid #2C2C2E"
+      logo:
+        src = "/images/logo.svg"
+        alt = "ФРКТ БГУ — Факультет радиофизики и компьютерных технологий"
+        href = "/"
+        accent_bar = "8px × 32px bg:#1A56DB mr-3"
+        text = "ФРКТ"
+        subtext = "БГУ"
+      nav:
+        - { label: "Факультет",      href: "/faculty" }
+        - { label: "Программы",      href: "/programs" }
+        - { label: "Абитуриентам",   href: "/admissions" }
+        - { label: "Обучение",       href: "/education" }
+        - { label: "Наука",          href: "/science" }
+        - { label: "Новости",        href: "/news" }
+        - { label: "Контакты",       href: "/contacts" }
+      search_button:
+        icon = "Lucide Search"
+        label = "Поиск (Ctrl+K)"
+        action = "открывает SearchOverlay"
+        keyboard_shortcut = "Ctrl+K / Cmd+K"
+      cta:
+        label = "ПОСТУПИТЬ →"
+        href = "/admissions"
+        style = "bg:#1A56DB font:Archivo-Black 13px uppercase tracking-wide px-6 py-2"
+      mobile:
+        breakpoint = "< 1024px"
+        shows = "бургер-меню, все ссылки в drawer"
+
+    footer:
+      file = "src/components/layout/Footer.tsx"
+      bg = "#111827"
+      columns:
+        - heading = "ФРКТ БГУ"
+          links:
+            - { label: "О факультете",   href: "/faculty" }
+            - { label: "История",         href: "/faculty#history" }
+            - { label: "Руководство",     href: "/faculty/administration" }
+            - { label: "Кафедры",         href: "/faculty/departments" }
+            - { label: "Учёный совет",    href: "/faculty/council" }
+        - heading = "ОБУЧЕНИЕ"
+          links:
+            - { label: "Бакалавриат",       href: "/programs/bachelor" }
+            - { label: "Магистратура",      href: "/programs/master" }
+            - { label: "Расписание",        href: "/education#schedules" }
+            - { label: "Учебный календарь", href: "/education#calendar" }
+            - { label: "Документы",         href: "/education#documents" }
+        - heading = "АБИТУРИЕНТАМ"
+          links:
+            - { label: "Как поступить",             href: "/admissions" }
+            - { label: "Специальности",             href: "/programs" }
+            - { label: "Плановый набор 2026",       href: "/admissions#places" }
+            - { label: "Вступительные испытания",   href: "/admissions#exams" }
+            - { label: "Общежитие",                 href: "/admissions#dormitory" }
+            - { label: "Дни открытых дверей",       href: "/admissions#open-days" }
+        - heading = "КОНТАКТЫ"
+          links:
+            - { label: "220045, Минск, ул. Академика Курчатова, 5", href: "/contacts" }
+            - { label: "+375 (17) 209-58-18",  href: "tel:+375172095818" }
+            - { label: "rct@bsu.by",            href: "mailto:rct@bsu.by" }
+      social_links:
+        - { platform: "VK",        url: "https://vk.com/rfikt_bsu" }
+        - { platform: "Telegram",  url: "https://t.me/rct_bsu" }
+        - { platform: "Instagram", url: "https://www.instagram.com/rct.bsu/" }
+        - { platform: "Facebook",  url: "https://www.facebook.com/groups/1716620758578504" }
+        - { platform: "TikTok",    url: "https://www.tiktok.com/@rfiktss" }
+      copyright = "© 2025 ФРКТ БГУ. Все права защищены."
+      bsu_link:
+        label = "Белорусский государственный университет"
+        href = "https://bsu.by"
+
+  # ─── ПОИСК ───────────────────────────────────────────────────────────────────
+
+  module Search:
+    engine = "Pagefind"
+    version = "^1.1"
+    index_command = "npx pagefind --site out --output-path public/pagefind"
+    note = "Запускать ПОСЛЕ next build. Индексирует все HTML-файлы в /out."
+
+    html_attributes:
+      data-pagefind-body = "на <main> каждой страницы — индексируемый контент"
+      data-pagefind-meta = "title, description — на <title> и <meta name=description>"
+      data-pagefind-ignore = "на <header>, <footer>, <nav> — исключить из индекса"
+
+    components:
+      SearchBar:
+        file = "src/components/search/SearchBar.tsx"
+        placeholder = "Поиск по сайту... (Ctrl+K)"
+        style = "border:1px solid #2C2C2E bg:#141416 text:#FFFFFF rounded-none h-10 pl-10"
+        icon = "Lucide Search, left, #8A8A8E"
+        on_focus = "открывает SearchOverlay"
+
+      SearchOverlay:
+        file = "src/components/search/SearchOverlay.tsx"
+        trigger = "Ctrl+K / Cmd+K, или клик на SearchBar"
+        style = "fixed inset-0 bg-black/80 z-50, centered modal 640px max-w"
+        keyboard = "Escape — закрыть; ↑↓ — навигация по результатам; Enter — перейти"
+        result_item:
+          shows = ["title", "breadcrumb URL", "highlighted excerpt (Pagefind <mark>)"]
+          on_click = "navigate + close overlay"
+        states:
+          empty = "«Начните вводить запрос...»"
+          loading = "spinner"
+          no_results = "«Ничего не найдено по запросу &laquo;{query}&raquo;»"
+          results = "список ResultItem компонентов"
+
+      SearchResultsPage:
+        route = "/search"
+        file = "src/app/search/page.tsx"
+        query_param = "q"
+        behavior = "читает ?q=, выполняет pagefind.search(), отображает результаты"
+        sections = ["Заголовок: Результаты поиска: {q}", "счётчик результатов", "список ResultItem"]
+
+  # ─── ГЛАВНАЯ СТРАНИЦА ─────────────────────────────────────────────────────────
+
+  module HomePage:
+    route = "/"
+    file = "src/app/page.tsx"
+    title = "Факультет радиофизики и компьютерных технологий — БГУ"
+    meta_description = "Единственный физико-технический факультет в Беларуси. Программирование, кибербезопасность, ИИ, радиофизика, аэрокосмические технологии."
+    content_file = "src/content/home.mdx"
+
+    sections:
+      - id = "hero"
+        component = "HeroSection"
+        file = "src/components/sections/HeroSection.tsx"
+        eyebrow = "// ФАКУЛЬТЕТ РАДИОФИЗИКИ И КОМПЬЮТЕРНЫХ ТЕХНОЛОГИЙ · БГУ"
+        headline = "НАУКА.\nЗНАНИЕ.\nБУДУЩЕЕ."
+        headline_note = "слово «ЗНАНИЕ.» — цвет #1A56DB"
+        subtext = "Единственный физико-технический факультет в Беларуси. Готовим инженеров, программистов, специалистов по ИИ, кибербезопасности и аэрокосмическим технологиям."
+        cta_primary:
+          label = "ПОСТУПИТЬ →"
+          href = "/admissions"
+        cta_secondary:
+          label = "Программы обучения"
+          href = "/programs"
+        stats:
+          - { value: "100+",  label: "ПРЕПОДАВАТЕЛЕЙ" }
+          - { value: "136",   label: "ЛЕТ ИСТОРИИ" }
+          - { value: "94%",   label: "ТРУДОУСТРОЙСТВО" }
+          - { value: "#1",    label: "В БЕЛАРУСИ" }
+        stats_layout = "горизонтальная полоса, разделители 1px #2C2C2E"
+
+      - id = "announcements"
+        component = "AnnouncementsBanner"
+        file = "src/components/sections/AnnouncementsBanner.tsx"
+        bg = "#141416"
+        border_top = "1px solid #2C2C2E"
+        items:
+          - text = "День открытых дверей — 28 марта 2026, 11:00, ул. Курчатова 5, ауд. 115"
+            href = "/admissions#open-days"
+          - text = "Единый день открытых дверей БГУ — 21 марта, пр. Независимости, 116"
+            href = "/admissions#open-days"
+          - text = "RoboCup Asia-Pacific 2025 — студенты ФРКТ заняли 1 место"
+            href = "/news"
+
+      - id = "programs-overview"
+        component = "ProgramsGrid"
+        file = "src/components/sections/ProgramsGrid.tsx"
+        eyebrow = "// ПРОГРАММЫ"
+        heading = "Направления подготовки"
+        cta = { label: "ВСЕ ПРОГРАММЫ →", href: "/programs" }
+        items:
+          - code = "6-05-0533-05"
+            title = "Радиофизика и информационные технологии"
+            qualification = "Радиофизик. Инженер-программист"
+            tracks = 5
+            budget_places = 86
+            image = "/images/specialty_digital_tech.jpg"
+            href = "/programs/bachelor/rphit"
+          - code = "6-05-0533-11"
+            title = "Прикладная информатика"
+            qualification = "Информатик. Программист"
+            tracks = 2
+            budget_places = 42
+            image = "/images/specialty_intelligent_systems.jpg"
+            href = "/programs/bachelor/ai"
+          - code = "6-05-0533-12"
+            title = "Кибербезопасность"
+            qualification = "Специалист по защите информации"
+            tracks = 1
+            budget_places = 42
+            image = "/images/specialty_cybersecurity.jpg"
+            href = "/programs/bachelor/cs"
+            accent = true
+            note = "Выделенная карточка — bg:#1A56DB"
+          - code = "6-05-0533-15"
+            title = "Интеллектуальная электроника"
+            qualification = "Радиофизик. Инженер-программист"
+            tracks = 1
+            budget_places = 22
+            image = "/images/specialty_intelligent_electronics.jpg"
+            href = "/programs/bachelor/ie"
+
+      - id = "about-teaser"
+        component = "AboutTeaser"
+        file = "src/components/sections/AboutTeaser.tsx"
+        bg = "#141416"
+        eyebrow = "// О ФАКУЛЬТЕТЕ"
+        headline = "Единственный физико-технический\nфакультет в Беларуси"
+        body = "Готовим специалистов мирового уровня. Уникальное сочетание: информатика, программирование, радиофизика, электроника. С нами работали над проектами Марс, Венера, Буран-Энергия и первым белорусским наноспутником БГУСат-1."
+        achievements:
+          - "Антенны для межпланетных космических станций"
+          - "БГУСат-1 — первый наноспутник белорусского университета"
+          - "Проекты Марс, Венера, Буран-Энергия"
+          - "Партнёрство с ПВТ, EPAM, ITransition и ведущими IT-компаниями"
+        cta = { label: "ОБ УНИВЕРСИТЕТЕ →", href: "/faculty" }
+
+      - id = "news-preview"
+        component = "NewsPreview"
+        file = "src/components/sections/NewsPreview.tsx"
+        eyebrow = "// АКТУАЛЬНОЕ"
+        heading = "Новости и события"
+        cta = { label: "ВСЕ НОВОСТИ →", href: "/news" }
+        layout = "2 колонки: большая featured-карточка слева + 3 малые справа"
+        items_count = 4
+        source = "src/content/news/*.mdx — 4 последних по дате"
+
+      - id = "partners"
+        component = "PartnersSection"
+        file = "src/components/sections/PartnersSection.tsx"
+        bg = "#141416"
+        eyebrow = "// ПАРТНЁРЫ"
+        heading = "Компании-партнёры"
+        layout = "горизонтальный ряд логотипов, grayscale → color on hover"
+        items = "из assets.partner_logos"
+
+  # ─── ФАКУЛЬТЕТ ───────────────────────────────────────────────────────────────
+
+  module FacultyPage:
+    route = "/faculty"
+    file = "src/app/faculty/page.tsx"
+    content_file = "src/content/faculty.mdx"
+    title = "О факультете — ФРКТ БГУ"
+    meta_description = "Единственный физико-технический факультет в Беларуси. Кафедры, история, научные достижения, структура."
+    source_url = "https://rct.bsu.by/faculty"
+
+    sections:
+      - id = "hero"
+        image = "/images/faculty_building.jpg"
+        alt = "Корпус ФРКТ БГУ, ул. Академика Курчатова, 5"
+        overlay_headline = "// ФАКУЛЬТЕТ РАДИОФИЗИКИ И КОМПЬЮТЕРНЫХ ТЕХНОЛОГИЙ"
+
+      - id = "stats"
+        component = "StatsBand"
+        items:
+          - { value: "100+", label: "ПРЕПОДАВАТЕЛЕЙ" }
+          - { value: "1",    label: "АКАДЕМИК НАН" }
+          - { value: "12",   label: "ДОКТОРОВ НАУК" }
+          - { value: "32",   label: "ДОЦЕНТОВ" }
+          - { value: "32",   label: "ИНЖЕНЕРОВ" }
+
+      - id = "overview"
+        eyebrow = "// О НАС"
+        heading = "Уникальная комбинация знаний"
+        content_from = "src/content/faculty.mdx#overview"
+        key_points:
+          - "Единственный физико-технический факультет в Республике Беларусь"
+          - "Готовит физиков-инженеров для радиоэлектроники, электроники, телекоммуникаций и ИТ"
+          - "Уникальное сочетание: информатика, программирование, радиофизика, электроника"
+          - "Международные научно-технические связи"
+
+      - id = "history"
+        anchor = "history"
+        eyebrow = "// ИСТОРИЯ"
+        heading = "Достижения"
+        timeline:
+          - { era: "XX век",  text: "Антенны для межпланетных космических станций" }
+          - { era: "2021",    text: "БГУСат-1 — первый наноспутник белорусского университета" }
+          - { era: "2022",    text: "БГУСат-2 — второй малый космический аппарат" }
+          - { era: "Прошлое", text: "Проекты Марс, Венера, Буран-Энергия; оборонная и авиационная промышленность" }
+
+      - id = "research-directions"
+        eyebrow = "// ИССЛЕДОВАНИЯ"
+        heading = "Направления научной работы"
+        items:
+          - "Современная информатика и обработка изображений"
+          - "IoT и искусственный интеллект"
+          - "Нейронные сети и кибербезопасность"
+          - "Системный анализ и интеллектуальные системы"
+          - "Распознавание речи и компьютерные сети"
+          - "Наноэлектроника и квантовые вычисления"
+          - "Смарт-электроника и аэрокосмические технологии"
+          - "Медико-биологические исследования и биоинформатика"
+
+      - id = "departments-grid"
+        eyebrow = "// КАФЕДРЫ"
+        heading = "8 кафедр"
+        cta = { label: "ВСЕ КАФЕДРЫ →", href: "/faculty/departments" }
+        layout = "2×4 сетка карточек"
+        items:
+          - { slug: "rdmt",       name: "Радиофизики и цифровых медиа технологий",                      href: "/faculty/departments/rdmt" }
+          - { slug: "qro",        name: "Квантовой радиофизики и оптоэлектроники",                      href: "/faculty/departments/qro" }
+          - { slug: "physelnano", name: "Физической электроники и нанотехнологий",                      href: "/faculty/departments/physelnano" }
+          - { slug: "ics",        name: "Информатики и компьютерных систем",                            href: "/faculty/departments/ics" }
+          - { slug: "kis",        name: "Интеллектуальных систем",                                      href: "/faculty/departments/kis" }
+          - { slug: "teleit",     name: "Телекоммуникаций и информационных технологий",                 href: "/faculty/departments/teleit" }
+          - { slug: "sacm",       name: "Системного анализа и компьютерного моделирования",             href: "/faculty/departments/sacm" }
+          - { slug: "phaerotech", name: "Физики и аэрокосмических технологий",                          href: "/faculty/departments/phaerotech" }
+
+      - id = "links"
+        heading = "Документы и ресурсы"
+        items:
+          - { label: "Сотрудники",          href: "/faculty/staff" }
+          - { label: "Руководство",          href: "/faculty/administration" }
+          - { label: "Учёный совет",         href: "/faculty/council" }
+          - { label: "Каталог дисциплин",    href: "/faculty#catalog" }
+          - { label: "Распределение 2025",   href: "/faculty#distribution" }
+
+  module DepartmentsIndexPage:
+    route = "/faculty/departments"
+    file = "src/app/faculty/departments/page.tsx"
+    title = "Кафедры — ФРКТ БГУ"
+    content:
+      eyebrow = "// КАФЕДРЫ"
+      heading = "Академический состав"
+      departments:
+        - slug = "rdmt"
+          name = "Кафедра радиофизики и цифровых медиа технологий"
+          head = "Максимович Елена Степановна"
+          head_title = "Канд. техн. наук"
+          href = "/faculty/departments/rdmt"
+        - slug = "qro"
+          name = "Кафедра квантовой радиофизики и оптоэлектроники"
+          head = "Афоненко Александр Анатольевич"
+          head_title = "Д-р физ.-мат. наук, профессор"
+          href = "/faculty/departments/qro"
+        - slug = "physelnano"
+          name = "Кафедра физической электроники и нанотехнологий"
+          head = "Борздов Владимир Михайлович"
+          head_title = "Д-р физ.-мат. наук, профессор"
+          href = "/faculty/departments/physelnano"
+        - slug = "ics"
+          name = "Кафедра информатики и компьютерных систем"
+          head = "Семенович Сергей Николаевич"
+          head_title = "Канд. техн. наук, доцент"
+          href = "/faculty/departments/ics"
+        - slug = "kis"
+          name = "Кафедра интеллектуальных систем"
+          head = "Козлова Елена Ивановна"
+          head_title = "Канд. физ.-мат. наук, доцент"
+          href = "/faculty/departments/kis"
+        - slug = "teleit"
+          name = "Кафедра телекоммуникаций и информационных технологий"
+          head = "Воротницкий Юрий Иосифович"
+          head_title = "Канд. физ.-мат. наук, доцент"
+          href = "/faculty/departments/teleit"
+        - slug = "sacm"
+          name = "Кафедра системного анализа и компьютерного моделирования"
+          head = "Яцков Николай Николаевич"
+          head_title = "Канд. физ.-мат. наук, доцент"
+          href = "/faculty/departments/sacm"
+        - slug = "phaerotech"
+          name = "Кафедра физики и аэрокосмических технологий"
+          head = "Сачков Владимир Алексеевич"
+          head_title = "Д-р физ.-мат. наук, профессор"
+          href = "/faculty/departments/phaerotech"
+
+  module DepartmentDetailPage:
+    route = "/faculty/departments/[slug]"
+    file = "src/app/faculty/departments/[slug]/page.tsx"
+    content_pattern = "src/content/departments/{slug}.mdx"
+    title_template = "{dept_name} — ФРКТ БГУ"
+    static_params = ["rdmt","qro","physelnano","ics","kis","teleit","sacm","phaerotech"]
+    source_url_pattern = "https://rct.bsu.by/faculty/departments/{slug}"
+
+    content_sub_files:
+      note = "Каждый slug имеет дополнительные MDX-файлы в src/content/departments/. Все собраны в одну страницу с табами или аккордеоном."
+      pattern_scientific_directions = "src/content/departments/{slug}-scientific-directions.mdx"
+      pattern_science               = "src/content/departments/{slug}-science.mdx"
+      pattern_staff                 = "src/content/departments/{slug}-staff.mdx"
+      pattern_famous_graduates      = "src/content/departments/{slug}-famous-graduates.mdx"
+      ics_extra                     = "src/content/departments/ics-competencies.mdx"
+
+    sections_template:
+      - "Breadcrumb: Главная / Факультет / Кафедры / {name}"
+      - "Заголовок кафедры с eyebrow '// КАФЕДРА'"
+      - "Руководитель (фото-placeholder, ФИО, учёная степень, контакт)"
+      - "Куратор (ФИО, должность)"
+      - "Описание (из {slug}.mdx)"
+      - "Табы/аккордеон: Научные направления | Наука | Преподаватели | Известные выпускники"
+      - "  - Научные направления: из {slug}-scientific-directions.mdx (teleit — отсутствует, показать заглушку)"
+      - "  - Наука: из {slug}-science.mdx"
+      - "  - Преподаватели: из {slug}-staff.mdx"
+      - "  - Известные выпускники: из {slug}-famous-graduates.mdx"
+      - "  - (только ics) Компетенции: из ics-competencies.mdx"
+      - "Подраздел: связанные специальности (ссылки на /programs/bachelor/[slug])"
+
+    department_data:
+      rdmt:
+        name = "Кафедра радиофизики и цифровых медиа технологий"
+        head = "Максимович Елена Степановна, Канд. техн. наук"
+        curator = "Беленькая Светлана Сергеевна, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/rdmt"
+      qro:
+        name = "Кафедра квантовой радиофизики и оптоэлектроники"
+        head = "Афоненко Александр Анатольевич, Д-р физ.-мат. наук, профессор"
+        curator = "Кадола Елена Вацлафовна, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/qro"
+        conference_contact = "qe@bsu.by, +375 17 282-10-39"
+      physelnano:
+        name = "Кафедра физической электроники и нанотехнологий"
+        head = "Борздов Владимир Михайлович, Д-р физ.-мат. наук, профессор"
+        curator = "Василевский Юрий Георгиевич, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/physelnano"
+      ics:
+        name = "Кафедра информатики и компьютерных систем"
+        head = "Семенович Сергей Николаевич, Канд. техн. наук, доцент"
+        curator = "Стецко Игорь Петрович, Канд. техн. наук, доцент"
+        source_url = "https://rct.bsu.by/faculty/departments/ics"
+      kis:
+        name = "Кафедра интеллектуальных систем"
+        head = "Козлова Елена Ивановна, Канд. физ.-мат. наук, доцент"
+        curator = "Штукаер Дмитрий Сергеевич, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/kis"
+      teleit:
+        name = "Кафедра телекоммуникаций и информационных технологий"
+        head = "Воротницкий Юрий Иосифович, Канд. физ.-мат. наук, доцент"
+        curator = "Попко Елена Евгеньевна, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/teleit"
+      sacm:
+        name = "Кафедра системного анализа и компьютерного моделирования"
+        head_and_curator = "Яцков Николай Николаевич, Канд. физ.-мат. наук, доцент"
+        source_url = "https://rct.bsu.by/faculty/departments/sacm"
+      phaerotech:
+        name = "Кафедра физики и аэрокосмических технологий"
+        head = "Сачков Владимир Алексеевич, Д-р физ.-мат. наук, профессор"
+        curator = "Баранова Василина Сергеевна, старший преподаватель"
+        source_url = "https://rct.bsu.by/faculty/departments/phaerotech"
+
+  module FacultyAdminPage:
+    route = "/faculty/administration"
+    file = "src/app/faculty/administration/page.tsx"
+    content_file = "src/content/faculty_administration.mdx"
+    title = "Руководство — ФРКТ БГУ"
+    source_url = "https://rct.bsu.by/faculty/administration"
+    content:
+      dean:
+        name = "Ушаков Дмитрий Владимирович"
+        title = "Декан"
+        degree = "Д-р физ.-мат. наук, доцент"
+        phone = "+375 (17) 209-59-03"
+        email = "ushakovdv@bsu.by"
+        photo = "/images/dean_ushakov.jpg"
+
+  module FacultyStaffPage:
+    route = "/faculty/staff"
+    file = "src/app/faculty/staff/page.tsx"
+    content_file = "src/content/faculty_staff.mdx"
+    title = "Сотрудники — ФРКТ БГУ"
+    source_url = "https://rct.bsu.by/faculty/staff"
+    features:
+      - "Фильтр по кафедре (select/tabs)"
+      - "Поиск по имени (client-side)"
+      - "Группировка: по кафедрам или по алфавиту"
+
+  module FacultyCouncilPage:
+    route = "/faculty/council"
+    file = "src/app/faculty/council/page.tsx"
+    content_file = "src/content/faculty_council.mdx"
+    title = "Учёный совет — ФРКТ БГУ"
+    source_url = "https://rct.bsu.by/faculty/council"
+
+  # ─── ПРОГРАММЫ ───────────────────────────────────────────────────────────────
+
+  module ProgramsPage:
+    route = "/programs"
+    file = "src/app/programs/page.tsx"
+    title = "Программы обучения — ФРКТ БГУ"
+    meta_description = "Бакалавриат и магистратура ФРКТ БГУ 2026. Радиофизика, кибербезопасность, информатика, интеллектуальная электроника, аэрокосмические технологии."
+
+    sections:
+      - id = "bachelor"
+        eyebrow = "// БАКАЛАВРИАТ (4 специальности, 9 направлений)"
+        heading = "Первая ступень"
+        cta = { label: "ПОДРОБНЕЕ →", href: "/programs/bachelor" }
+        items:
+          - code = "6-05-0533-05"
+            title = "Радиофизика и информационные технологии"
+            qualification = "Радиофизик. Инженер-программист"
+            tracks = 5
+            budget = 86
+            paid = 10
+            image = "/images/specialty_digital_tech.jpg"
+            href = "/programs/bachelor/rphit"
+          - code = "6-05-0533-11"
+            title = "Прикладная информатика"
+            qualification = "Информатик. Программист"
+            tracks = 2
+            budget = 42
+            paid = 10
+            image = "/images/specialty_intelligent_systems.jpg"
+            href = "/programs/bachelor/ai"
+          - code = "6-05-0533-12"
+            title = "Кибербезопасность"
+            qualification = "Специалист по защите информации"
+            tracks = 1
+            budget = 42
+            paid = 10
+            image = "/images/specialty_cybersecurity.jpg"
+            href = "/programs/bachelor/cs"
+          - code = "6-05-0533-15"
+            title = "Интеллектуальная электроника"
+            qualification = "Радиофизик. Инженер-программист"
+            tracks = 1
+            budget = 22
+            paid = 2
+            image = "/images/specialty_intelligent_electronics.jpg"
+            href = "/programs/bachelor/ie"
+
+      - id = "master"
+        eyebrow = "// МАГИСТРАТУРА (3 специальности)"
+        heading = "Вторая ступень"
+        cta = { label: "ПОДРОБНЕЕ →", href: "/programs/master" }
+        items:
+          - code = "7-06-0533-03"
+            title = "Радиофизика и информационные технологии"
+            budget = 10
+            paid = 3
+            image = "/images/masters_program_1.jpg"
+            href = "/programs/master/rfitm"
+          - code = "7-06-0533-08"
+            title = "Кибербезопасность"
+            budget = 13
+            paid = 1
+            english_available = true
+            image = "/images/specialty_cybersecurity.jpg"
+            href = "/programs/master/cs-mag"
+          - code = "7-06-0533-09"
+            title = "Аэрокосмические технологии"
+            budget = 5
+            paid = 1
+            english_available = true
+            image = "/images/masters_aerospace.jpg"
+            href = "/programs/master/aerocos"
+
+  module BachelorProgramDetailPage:
+    route = "/programs/bachelor/[slug]"
+    file = "src/app/programs/bachelor/[slug]/page.tsx"
+    content_pattern = "src/content/programs/bachelor/{slug}.mdx"
+    title_template = "{specialty} — Бакалавриат ФРКТ БГУ"
+    static_params:
+      rphit:
+        specialty = "Радиофизика и информационные технологии"
+        code = "6-05-0533-05"
+        qualification = "Радиофизик. Инженер-программист"
+        budget = 86
+        paid = 10
+        tracks:
+          - { slug: "aero",   title: "Аэрокосмические технологии",                                               href: "/programs/bachelor/rphit/aero",   image: "/images/specialty_aerospace.jpg",          head: "Сачков В.А.", head_title: "Д-р физ.-мат. наук, профессор", curator: "Баранова В.С." }
+          - { slug: "inform", title: "Информатика, программируемая электроника и измерительные системы",         href: "/programs/bachelor/rphit/inform", image: "/images/specialty_informatics.jpg",        head: "Стецко И.П.", head_title: "Канд. техн. наук, доцент" }
+          - { slug: "kptms",  title: "Компьютерное проектирование и технология микроэлектронных систем",         href: "/programs/bachelor/rphit/kptms",  image: "/images/specialty_microelectronics.jpg",  head: "Борздов В.М.", head_title: "Д-р физ.-мат. наук, профессор", curator: "Василевский Ю.Г." }
+          - { slug: "fpkt",   title: "Фотоника и прикладные компьютерные технологии",                           href: "/programs/bachelor/rphit/fpkt",   image: "/images/specialty_photonics.jpg",         head: "Афоненко А.А.", head_title: "Д-р физ.-мат. наук, профессор", curator: "Кадола Е.В." }
+          - { slug: "rdt",    title: "Радиофизика и цифровые технологии",                                       href: "/programs/bachelor/rphit/rdt",    image: "/images/specialty_digital_tech.jpg",      head: "Максимович Е.С.", head_title: "Канд. техн. наук", curator: "Беленькая С.С." }
+      ai:
+        specialty = "Прикладная информатика"
+        code = "6-05-0533-11"
+        qualification = "Информатик. Программист"
+        budget = 42
+        paid = 10
+        tracks:
+          - { slug: "ics", title: "Интеллектуальные и киберфизические системы",  href: "/programs/bachelor/ai/ics", image: "/images/specialty_intelligent_systems.jpg",  head: "Козлова Е.И.", head_title: "Канд. физ.-мат. наук, доцент", curator: "Штукаер Д.С." }
+          - { slug: "bd",  title: "Анализ больших данных и биоинформатика",       href: "/programs/bachelor/ai/bd",  image: "/images/specialty_bioinformatics.jpg",        head: "Яцков Н.Н.", head_title: "Канд. физ.-мат. наук, доцент" }
+      cs:
+        specialty = "Кибербезопасность"
+        code = "6-05-0533-12"
+        qualification = "Специалист по защите информации"
+        budget = 42
+        paid = 10
+        tracks:
+          - { slug: "cs", title: "Безопасность компьютерных технологий и систем", href: "/programs/bachelor/cs/cs", image: "/images/specialty_cybersecurity.jpg", head: "Воротницкий Ю.И.", head_title: "Канд. физ.-мат. наук, доцент", curator: "Попко Е.Е." }
+      ie:
+        specialty = "Интеллектуальная электроника"
+        code = "6-05-0533-15"
+        qualification = "Радиофизик. Инженер-программист"
+        budget = 22
+        paid = 2
+        tracks:
+          - { slug: "ie", title: "Цифровые интеллектуальные системы", href: "/programs/bachelor/ie/ie", image: "/images/specialty_intelligent_electronics.jpg", head: "Семенович С.Н.", head_title: "Канд. техн. наук", curator: "Стецко И.П." }
+
+    sections_per_page:
+      - "Hero: код специальности, квалификация, изображение"
+      - "Треки-направления (карточки 2×N: название, руководитель, описание, ссылка)"
+      - "Плановый набор 2026: таблица бюджет/платно"
+      - "Учебные программы (PDF-ссылки на public/docs/syllabi/)"
+      - "Перспективы трудоустройства"
+      - "Карьерные пути: ПВТ, IT-компании, НАН, оборонная отрасль"
+
+  module MasterProgramDetailPage:
+    route = "/programs/master/[slug]"
+    file = "src/app/programs/master/[slug]/page.tsx"
+    content_pattern = "src/content/programs/master/{slug}.mdx"
+    static_params:
+      rfitm:
+        title = "Радиофизика и информационные технологии"
+        code = "7-06-0533-03"
+        budget = 10
+        paid = 3
+        head = "Максимович Е.С., Канд. техн. наук"
+        curator = "Беленькая С.С."
+        image = "/images/masters_program_1.jpg"
+        english = false
+        href = "/programs/master/rfitm"
+      cs-mag:
+        title = "Кибербезопасность"
+        code = "7-06-0533-08"
+        budget = 13
+        paid = 1
+        head = "Воротницкий Ю.И., Канд. физ.-мат. наук, доцент"
+        curator = "Попко Е.Е."
+        image = "/images/specialty_cybersecurity.jpg"
+        english = true
+        english_label = "Cybersecurity (обучение на английском языке)"
+        href = "/programs/master/cs-mag"
+      aerocos:
+        title = "Аэрокосмические технологии"
+        code = "7-06-0533-09"
+        budget = 5
+        paid = 1
+        head = "Сачков В.А., Д-р физ.-мат. наук, профессор"
+        curator = "Баранова В.С."
+        image = "/images/masters_aerospace.jpg"
+        english = true
+        english_label = "Aerospace Technologies (обучение на английском языке)"
+        href = "/programs/master/aerocos"
+
+  module BachelorIndexPage:
+    route = "/programs/bachelor"
+    file = "src/app/programs/bachelor/page.tsx"
+    title = "Бакалавриат — ФРКТ БГУ"
+    meta_description = "Специальности бакалавриата ФРКТ БГУ 2026. Радиофизика и ИТ, Прикладная информатика, Кибербезопасность, Интеллектуальная электроника."
+    content_note = "Страница агрегирует данные из BachelorProgramDetailPage.static_params — не требует отдельного MDX-файла."
+
+    sections:
+      - id = "hero"
+        eyebrow = "// БАКАЛАВРИАТ — ПЕРВАЯ СТУПЕНЬ"
+        heading = "4 специальности, 9 направлений подготовки"
+        cta = { label: "ПОСТУПИТЬ →", href: "/admissions" }
+
+      - id = "specialties-grid"
+        layout = "4 карточки (2×2 на desktop, 1-колонка mobile)"
+        items:
+          - { slug: "rphit", code: "6-05-0533-05", title: "Радиофизика и информационные технологии", qualification: "Радиофизик. Инженер-программист", budget: 86, paid: 10, tracks: 5, image: "/images/specialty_digital_tech.jpg", href: "/programs/bachelor/rphit" }
+          - { slug: "ai",    code: "6-05-0533-11", title: "Прикладная информатика",                  qualification: "Информатик. Программист",           budget: 42, paid: 10, tracks: 2, image: "/images/specialty_intelligent_systems.jpg", href: "/programs/bachelor/ai" }
+          - { slug: "cs",    code: "6-05-0533-12", title: "Кибербезопасность",                       qualification: "Специалист по защите информации",   budget: 42, paid: 10, tracks: 1, image: "/images/specialty_cybersecurity.jpg",       href: "/programs/bachelor/cs", accent: true }
+          - { slug: "ie",    code: "6-05-0533-15", title: "Интеллектуальная электроника",            qualification: "Радиофизик. Инженер-программист",   budget: 22, paid: 2,  tracks: 1, image: "/images/specialty_intelligent_electronics.jpg", href: "/programs/bachelor/ie" }
+
+      - id = "study-info"
+        eyebrow = "// ФОРМА ОБУЧЕНИЯ"
+        items:
+          - "Срок обучения: 4 года (дневная форма)"
+          - "Язык обучения: русский (английский — отдельно для магистратуры)"
+          - "Поступление: по результатам ЦЭ + ЦТ, средний балл аттестата"
+        cta = { label: "ПРАВИЛА ПРИЁМА →", href: "/admissions" }
+
+  module MasterIndexPage:
+    route = "/programs/master"
+    file = "src/app/programs/master/page.tsx"
+    title = "Магистратура — ФРКТ БГУ"
+    meta_description = "Специальности магистратуры ФРКТ БГУ 2026. Радиофизика и ИТ, Кибербезопасность, Аэрокосмические технологии. Обучение на русском и английском языках."
+    content_note = "Страница агрегирует данные из MasterProgramDetailPage.static_params — не требует отдельного MDX-файла."
+
+    sections:
+      - id = "hero"
+        eyebrow = "// МАГИСТРАТУРА — ВТОРАЯ СТУПЕНЬ"
+        heading = "3 специальности, обучение на русском и английском"
+        cta = { label: "ПОСТУПИТЬ →", href: "/admissions" }
+
+      - id = "specialties-grid"
+        layout = "3 карточки (3-колонки desktop, 1-колонка mobile)"
+        items:
+          - { slug: "rfitm",  code: "7-06-0533-03", title: "Радиофизика и информационные технологии", budget: 10, paid: 3, english: false, image: "/images/masters_program_1.jpg",   href: "/programs/master/rfitm" }
+          - { slug: "cs-mag", code: "7-06-0533-08", title: "Кибербезопасность",                        budget: 13, paid: 1, english: true,  image: "/images/specialty_cybersecurity.jpg", href: "/programs/master/cs-mag", accent: true }
+          - { slug: "aerocos",code: "7-06-0533-09", title: "Аэрокосмические технологии",               budget: 5,  paid: 1, english: true,  image: "/images/masters_aerospace.jpg",  href: "/programs/master/aerocos" }
+
+      - id = "study-info"
+        eyebrow = "// ФОРМА ОБУЧЕНИЯ"
+        items:
+          - "Срок обучения: 2 года (дневная форма)"
+          - "Языки: русский и английский (Кибербезопасность, Аэрокосмика)"
+          - "Требование: диплом бакалавра (или специалиста)"
+        cta = { label: "ПОДРОБНЕЕ →", href: "/admissions" }
+
+  module TrackDetailPage:
+    route = "/programs/bachelor/[slug]/[track]"
+    file = "src/app/programs/bachelor/[slug]/[track]/page.tsx"
+    title_template = "{track_title} — {specialty} — Бакалавриат ФРКТ БГУ"
+    note = "Общий шаблон для всех треков всех специальностей бакалавриата."
+
+    generateStaticParams:
+      note = "Генерировать декартово произведение slug × track из данных ниже."
+      params:
+        - { slug: "rphit", track: "aero",   title: "Аэрокосмические технологии",                                               content_source: "old_site/content/specialties/aero.md",   image: "/images/specialty_aerospace.jpg",          head: "Сачков В.А., Д-р физ.-мат. наук, профессор",    curator: "Баранова В.С." }
+        - { slug: "rphit", track: "inform", title: "Информатика, программируемая электроника и измерительные системы",         content_source: "old_site/content/specialties/inform.md", image: "/images/specialty_informatics.jpg",        head: "Стецко И.П., Канд. техн. наук, доцент" }
+        - { slug: "rphit", track: "kptms",  title: "Компьютерное проектирование и технология микроэлектронных систем",         content_source: "old_site/content/specialties/kptms.md",  image: "/images/specialty_microelectronics.jpg",  head: "Борздов В.М., Д-р физ.-мат. наук, профессор",   curator: "Василевский Ю.Г." }
+        - { slug: "rphit", track: "fpkt",   title: "Фотоника и прикладные компьютерные технологии",                           content_source: "old_site/content/specialties/fpkt.md",   image: "/images/specialty_photonics.jpg",          head: "Афоненко А.А., Д-р физ.-мат. наук, профессор",  curator: "Кадола Е.В." }
+        - { slug: "rphit", track: "rdt",    title: "Радиофизика и цифровые технологии",                                       content_source: "old_site/content/specialties/rdt.md",    image: "/images/specialty_digital_tech.jpg",       head: "Максимович Е.С., Канд. техн. наук",             curator: "Беленькая С.С." }
+        - { slug: "ai",    track: "ics",    title: "Интеллектуальные и киберфизические системы",                               content_source: "old_site/content/specialties/ics.md",    image: "/images/specialty_intelligent_systems.jpg",head: "Козлова Е.И., Канд. физ.-мат. наук, доцент",    curator: "Штукаер Д.С." }
+        - { slug: "ai",    track: "bd",     title: "Анализ больших данных и биоинформатика",                                   content_source: "old_site/content/specialties/bd.md",     image: "/images/specialty_bioinformatics.jpg",     head: "Яцков Н.Н., Канд. физ.-мат. наук, доцент" }
+        - { slug: "cs",    track: "cs",     title: "Безопасность компьютерных технологий и систем",                           content_source: "old_site/content/specialties/cs.md",     image: "/images/specialty_cybersecurity.jpg",      head: "Воротницкий Ю.И., Канд. физ.-мат. наук, доцент",curator: "Попко Е.Е." }
+        - { slug: "ie",    track: "ie",     title: "Цифровые интеллектуальные системы",                                       content_source: "old_site/content/specialties/ie.md",     image: "/images/specialty_intelligent_electronics.jpg", head: "Семенович С.Н., Канд. техн. наук", curator: "Стецко И.П." }
+
+    content_dest_pattern = "src/content/programs/bachelor/{slug}/{track}.mdx"
+
+    sections_template:
+      - "Breadcrumb: Главная / Программы / Бакалавриат / {specialty} / {track_title}"
+      - "Eyebrow: // НАПРАВЛЕНИЕ ПОДГОТОВКИ"
+      - "Заголовок: название трека (Archivo Black)"
+      - "Руководитель трека: ФИО, степень"
+      - "Куратор (если есть)"
+      - "Описание трека (из MDX)"
+      - "Блок: чему вы научитесь (из MDX)"
+      - "Где работают выпускники (из MDX)"
+      - "Ссылка: ← К специальности ({specialty}) /programs/bachelor/{slug}"
+      - "Ссылка: Поступить → /admissions/{admissions_slug}"
+
+  module ScienceLabsPage:
+    route = "/science/labs"
+    file = "src/app/science/labs/page.tsx"
+    title = "Лаборатории — ФРКТ БГУ"
+    meta_description = "Научно-исследовательские лаборатории факультета радиофизики и компьютерных технологий БГУ."
+    content_note = "Данные берутся из inline-контента ниже — отдельный MDX не требуется. Дополнить из old_site/content/science.md если там есть раздел о лабораториях."
+
+    sections:
+      - id = "hero"
+        eyebrow = "// НАУЧНО-ИССЛЕДОВАТЕЛЬСКИЕ ЛАБОРАТОРИИ"
+        heading = "Лаборатории ФРКТ"
+
+      - id = "labs-grid"
+        layout = "2 колонки карточек (или 1 на mobile)"
+        items:
+          - { name: "НИЛ лазерных систем",                          dept: "Квантовая радиофизика и оптоэлектроника" }
+          - { name: "НИЛ полупроводниковых лазеров",                 dept: "Квантовая радиофизика и оптоэлектроника" }
+          - { name: "НИЛ информационно-измерительных систем",        dept: "Радиофизика и цифровые медиа технологии" }
+          - { name: "НИЛ робототехники и встраиваемых систем",       dept: "Информатика и компьютерные системы" }
+          - { name: "НИЛ методов обработки информации",              dept: "Интеллектуальные системы" }
+          - { name: "НИЛ моделирования и анализа процессов и систем",dept: "Системный анализ и компьютерное моделирование" }
+          - { name: "Аэрокосмический образовательный центр БГУ",     dept: "Физика и аэрокосмические технологии" }
+
+      - id = "cta"
+        cta = { label: "← НАЗАД К НАУКЕ", href: "/science" }
+
+  # ─── АБИТУРИЕНТАМ ────────────────────────────────────────────────────────────
+
+  module AdmissionsPage:
+    route = "/admissions"
+    file = "src/app/admissions/page.tsx"
+    content_file = "src/content/admissions.mdx"
+    title = "Абитуриентам — ФРКТ БГУ"
+    meta_description = "Поступление в ФРКТ БГУ 2026. Правила приёма, плановый набор, вступительные испытания, общежитие, дни открытых дверей."
+    source_url = "https://rct.bsu.by/enrollee"
+
+    sections:
+      - id = "dean-welcome"
+        dean_name = "Ушаков Дмитрий Владимирович"
+        dean_title = "Декан, д-р физ.-мат. наук, доцент"
+        photo = "/images/dean_ushakov.jpg"
+        quote = "Факультет радиофизики и компьютерных технологий — единственный физико-технический факультет в Республике Беларусь, готовящий физиков-инженеров для радиоэлектроники, электроники, телекоммуникаций и ИТ. Ждём вас в числе наших студентов."
+
+      - id = "enrollment-stats"
+        anchor = "places"
+        eyebrow = "// ПЛАНОВЫЙ НАБОР 2026"
+        heading = "Бюджетные и платные места"
+        bachelor_table:
+          headers = ["Специальность", "Код", "Бюджет", "Платно"]
+          rows:
+            - { specialty: "Радиофизика и информационные технологии", code: "6-05-0533-05", budget: 86, paid: 10 }
+            - { specialty: "Прикладная информатика",                   code: "6-05-0533-11", budget: 42, paid: 10 }
+            - { specialty: "Кибербезопасность",                        code: "6-05-0533-12", budget: 42, paid: 10 }
+            - { specialty: "Интеллектуальная электроника",             code: "6-05-0533-15", budget: 22, paid: 2  }
+        master_table:
+          rows:
+            - { specialty: "Радиофизика и информационные технологии", code: "7-06-0533-03", budget: 10, paid: 3 }
+            - { specialty: "Кибербезопасность",                        code: "7-06-0533-08", budget: 13, paid: 1 }
+            - { specialty: "Аэрокосмические технологии",               code: "7-06-0533-09", budget: 5,  paid: 1 }
+
+      - id = "requirements"
+        anchor = "requirements"
+        eyebrow = "// ВСТУПИТЕЛЬНЫЕ ИСПЫТАНИЯ"
+        heading = "Требования для поступления"
+        content = "4 показателя: 2 централизованных экзамена (русский или белорусский + математика или физика), 1 дополнительный ЦЭ (физика или математика), средний балл аттестата"
+
+      - id = "targeted-admission"
+        anchor = "targeted"
+        eyebrow = "// ЦЕЛЕВОЙ ПРИЁМ"
+        heading = "Целевое направление"
+        submission_period = "27 июня — 2 июля 2025"
+        location = "Юридический факультет, ауд. 308, ул. Ленина, 8, Минск"
+        hours = "9:00–18:00 (выходные: 29 июня, 3 июля)"
+        exam_physics_date = "8–9 июля 2024, 9:00"
+        consultation = "7 июля 2025"
+        downloads:
+          - { title: "20 вопросов для вступительного испытания (PDF)", file: "public/docs/targeted_exam_questions.pdf" }
+          - { title: "Перечень необходимых документов", file: "public/docs/targeted_documents_list.pdf" }
+          - { title: "Положение о целевой подготовке", file: "public/docs/targeted_training_regulations.pdf" }
+          - { title: "Положение о вступительных испытаниях", file: "public/docs/entrance_exam_regulations.pdf" }
+
+      - id = "documents"
+        anchor = "documents"
+        eyebrow = "// ДОКУМЕНТЫ"
+        heading = "Правила и регламенты"
+        items:
+          - { title: "Правила приёма 2026 (актуальные)", file: "public/docs/admission_rules_2026.pdf" }
+          - { title: "Порядок приёма в БГУ 2025",        file: "public/docs/bsu_admission_procedure_2025.pdf" }
+          - { title: "Особенности приёма ФРКТ 2025",     file: "public/docs/rcft_admission_features_2025.pdf" }
+          - { title: "Категории льготников",              file: "public/docs/preferential_categories.pdf" }
+        syllabi_bachelor:
+          eyebrow = "Программы первой ступени"
+          note = "PDF-ссылки, скачиваемые файлы из public/docs/syllabi/"
+          items:
+            - "Интеллектуальная электроника"
+            - "Кибербезопасность / Безопасность КТиС"
+            - "Анализ больших данных и биоинформатика"
+            - "Интеллектуальные и киберфизические системы"
+            - "Аэрокосмические технологии"
+            - "Информатика, программируемая электроника и измерительные системы"
+            - "Компьютерное проектирование и технология микроэлектронных систем"
+            - "Фотоника и прикладные компьютерные технологии"
+            - "Радиофизика и цифровые технологии"
+        syllabi_master:
+          items:
+            - "Аэрокосмические технологии (английский)"
+            - "Кибербезопасность (английский)"
+            - "Радиофизика и информационные технологии"
+            - "Кибербезопасность"
+            - "Аэрокосмические технологии"
+
+      - id = "open-days"
+        anchor = "open-days"
+        eyebrow = "// ДНИ ОТКРЫТЫХ ДВЕРЕЙ"
+        heading = "«Дни Радиофизика»"
+        body = "Бесплатное участие. Встречи с руководством, разъяснение правил приёма, экскурсии по лабораториям, рассказ о студенческой жизни."
+        upcoming:
+          - { date: "28 марта 2026, 11:00", location: "ул. Академика Курчатова, 5, ауд. 115", contact_name: "Михаил Владимирович", contact_phone: "+375(29)654-09-53" }
+          - { date: "21 марта 2026 (Единый день БГУ)", location: "пр. Независимости, 116" }
+
+      - id = "dormitory"
+        anchor = "dormitory"
+        eyebrow = "// ОБЩЕЖИТИЕ"
+        heading = "Проживание"
+        content = "Общежития БГУ №10 и №3 по ул. Академика Курчатова, 10. Блочное проживание."
+        link = { label: "Условия проживания studgorodok.bsu.by", href: "https://studgorodok.bsu.by/index.php/all-docs/registr-docs", external: true }
+
+      - id = "international"
+        anchor = "international"
+        eyebrow = "// МЕЖДУНАРОДНЫЕ ПАРТНЁРЫ"
+        heading = "Университеты-партнёры"
+        partners:
+          germany = ["Рурский университет", "Университет Йены", "Университет Магдебурга", "Институт цифровых медиатехнологий Ильменау"]
+          denmark = ["Орхусский университет"]
+          netherlands = ["Университет Вагенингена", "Лейденский университет"]
+          italy = ["Университет Тренто"]
+          switzerland = ["Бернский университет"]
+          belgium = ["Лёвенский университет"]
+          poland = ["Люблинский политехнический университет"]
+          france = ["Лионская высшая школа", "Институт Марии Кюри / IMRA-EUROPE/TOYOTA, Ницца"]
+          russia = ["Ведущие российские университеты"]
+
+      - id = "military"
+        anchor = "military"
+        heading = "Военная кафедра"
+        content = "Возможность параллельного обучения по программе подготовки офицеров запаса на военном факультете БГУ."
+
+  module AdmissionsSubPage:
+    route = "/admissions/[specialty]"
+    file = "src/app/admissions/[specialty]/page.tsx"
+    content_pattern = "src/content/admissions/{specialty}.mdx"
+    title_template = "Поступление — {specialty_name} — ФРКТ БГУ"
+    static_params = ["rphit","ai","cs","inelec","rfitm","cs-mag","aerot"]
+
+    content_sources:
+      - { slug: "rphit",  source: "old_site/content/enrollee/rphit.md",  specialty_name: "Радиофизика и ИТ" }
+      - { slug: "ai",     source: "old_site/content/enrollee/ai.md",     specialty_name: "Прикладная информатика" }
+      - { slug: "cs",     source: "old_site/content/enrollee/сs.md",     specialty_name: "Кибербезопасность", rename_required: true, note: "Исходный файл имеет кириллическую 'с'. Скрипт миграции должен переименовать." }
+      - { slug: "inelec", source: "old_site/content/enrollee/inelec.md", specialty_name: "Интеллектуальная электроника" }
+      - { slug: "rfitm",  source: "old_site/content/enrollee/rfitm.md",  specialty_name: "Радиофизика и ИТ (магистратура)" }
+      - { slug: "cs-mag", source: "old_site/content/enrollee/cs-mag.md", specialty_name: "Кибербезопасность (магистратура)" }
+      - { slug: "aerot",  source: "old_site/content/enrollee/aerot.md",  specialty_name: "Аэрокосмические технологии" }
+
+    sections_template:
+      - "Breadcrumb: Главная / Абитуриентам / {specialty_name}"
+      - "Заголовок специальности с кодом и квалификацией"
+      - "Детальная информация о поступлении: вступительные испытания, баллы, форма обучения"
+      - "Плановый набор: бюджет/платно"
+      - "Ссылка на страницу программы: /programs/bachelor/{slug} или /programs/master/{slug}"
+      - "Кнопка: НАЗАД К АБИТУРИЕНТАМ → /admissions"
+
+  module ScienceSchoolPage:
+    route = "/science/schools/[slug]"
+    file = "src/app/science/schools/[slug]/page.tsx"
+    content_pattern = "src/content/science/school-{slug}.mdx"
+    title_template = "{school_name} — Научные школы ФРКТ БГУ"
+    static_params:
+      - slug = "semiconductor"
+        title = "Физика полупроводников и материаловедение"
+        source = "old_site/content/science/school-semiconductor.md"
+      - slug = "informatics"
+        title = "Радиофизика и информатика"
+        source = "old_site/content/science/school-informatics.md"
+
+  # ─── ОБУЧЕНИЕ ─────────────────────────────────────────────────────────────────
+
+  module EducationPage:
+    route = "/education"
+    file = "src/app/education/page.tsx"
+    content_file = "src/content/education.mdx"
+    title = "Обучение — ФРКТ БГУ"
+    meta_description = "Расписание занятий и сессий, учебный календарь 2025–2026, шаблоны дипломных и курсовых работ, образовательный портал."
+    source_url = "https://rct.bsu.by/education"
+
+    sections:
+      - id = "schedules"
+        anchor = "schedules"
+        eyebrow = "// РАСПИСАНИЕ ЗАНЯТИЙ"
+        heading = "Расписание"
+        note = "Google Sheets ссылки — открываются в новой вкладке, target='_blank'"
+        items:
+          - { label: "1-й курс",                                      href: "https://docs.google.com/spreadsheets/", external: true }
+          - { label: "2-й курс",                                      href: "https://docs.google.com/spreadsheets/", external: true }
+          - { label: "3-й курс",                                      href: "https://docs.google.com/spreadsheets/", external: true }
+          - { label: "Магистратура 1-й курс (белорусский)",           href: "https://docs.google.com/spreadsheets/", external: true }
+          - { label: "Магистратура 1-й курс Кибербезопасность (англ)",href: "https://docs.google.com/spreadsheets/", external: true }
+        note_impl = "Хранить актуальные ссылки в src/content/education.mdx — обновляются вручную"
+
+      - id = "exams"
+        anchor = "exams"
+        eyebrow = "// РАСПИСАНИЕ СЕССИЙ"
+        heading = "Экзаменационные сессии"
+        winter_2024_2025:
+          - { label: "Пересдачи (февраль)", file: "public/docs/exams/makeup_feb.pdf" }
+          - { label: "Зимняя сессия 1–4 курс", file: "public/docs/exams/winter_session_1_4.pdf" }
+        master_winter_2025_2026:
+          - { label: "Кибербезопасность 1 курс (англ.)",        file: "public/docs/exams/master_cs1_en.pdf" }
+          - { label: "Радиофизика и ИТ 1 курс",                 file: "public/docs/exams/master_rfit1.pdf" }
+          - { label: "Кибербезопасность 1 курс",                file: "public/docs/exams/master_cs1.pdf" }
+          - { label: "Аэрокосмические технологии 1 курс",       file: "public/docs/exams/master_aero1.pdf" }
+          - { label: "Радиофизика и ИТ 2 курс",                 file: "public/docs/exams/master_rfit2.pdf" }
+          - { label: "Кибербезопасность 2 курс",                file: "public/docs/exams/master_cs2.pdf" }
+          - { label: "Аэрокосмические технологии 2 курс",       file: "public/docs/exams/master_aero2.pdf" }
+          - { label: "Аэрокосмика 2 курс (англ.)",              file: "public/docs/exams/master_aero2_en.pdf" }
+          - { label: "Кибербезопасность 2 курс (англ.)",        file: "public/docs/exams/master_cs2_en.pdf" }
+
+      - id = "calendar"
+        anchor = "calendar"
+        eyebrow = "// УЧЕБНЫЙ КАЛЕНДАРЬ 2025–2026"
+        heading = "Учебный год"
+        bachelor:
+          fall_semester:
+            teaching: "1 сентября 2025 — 3 января 2026"
+            exams: "5–24 января 2026"
+            vacation: "26 января — 8 февраля 2026"
+          spring_semester:
+            teaching: "9 февраля — 6 июня 2026"
+            exams: "8–30 июня 2026"
+            vacation: "1 июля — 31 августа 2026"
+          fourth_year:
+            pre_diploma: "2 февраля — 18 апреля 2026"
+            diploma_defense: "20 апреля — 30 июня 2026"
+        master:
+          first_year:
+            fall_teaching: "1 сентября — 3 января 2026"
+            fall_exams: "5–24 января 2026"
+            spring_teaching: "9 февраля — 6 июня 2026"
+            spring_exams: "8–30 июня 2026"
+          second_year:
+            fall_teaching: "1 сентября — 3 января 2026"
+            fall_exams: "5–17 января 2026"
+            research_internship: "2 февраля — 28 марта 2026"
+            thesis: "30 марта — 20 июня 2026"
+            defense: "22–30 июня 2026"
+          english_programs:
+            note = "Кибербезопасность (англ.) и Аэрокосмические технологии (англ.) — отдельный календарь, уточнять на странице"
+        phd:
+          spring_report: "Апрель 2026"
+          fall_report: "Октябрь 2025"
+          note: "Отчёты по кафедрам — за 1 месяц до факультетского"
+
+      - id = "documents"
+        anchor = "documents"
+        eyebrow = "// МЕТОДИЧЕСКИЕ МАТЕРИАЛЫ"
+        heading = "Шаблоны и инструкции"
+        diploma:
+          - { label: "Шаблон дипломной работы (.docx)",   file: "public/docs/diploma_template.docx" }
+          - { label: "Инструкция по оформлению (PDF)",     file: "public/docs/diploma_instructions.pdf" }
+          - { label: "Шаблон титульного листа (.docx)",    file: "public/docs/diploma_title.docx" }
+          - { label: "Задание дипломной работы (.docx)",   file: "public/docs/diploma_assignment.docx" }
+          - { label: "Рекомендации по оформлению (PDF)",  file: "public/docs/diploma_design_recommendations.pdf" }
+        coursework:
+          - { label: "Шаблон титульного листа курсовой",  file: "public/docs/coursework_title.docx" }
+          - { label: "Задание курсовой работы",            file: "public/docs/coursework_assignment.docx" }
+          - { label: "Рекомендации по оформлению",        file: "public/docs/coursework_design_recommendations.pdf" }
+          - { label: "Пример оформления ссылок (PDF)",    file: "public/docs/citation_format.pdf" }
+
+      - id = "resources"
+        anchor = "resources"
+        eyebrow = "// ПОЛЕЗНЫЕ ССЫЛКИ"
+        items:
+          - { label: "Образовательный портал ФРКТ",     href: "https://edurfe.bsu.by/",                          external: true }
+          - { label: "Электронная библиотека БГУ",      href: "https://elib.bsu.by/",                            external: true }
+          - { label: "Правила поведения студентов БГУ", href: "https://bsu.by/odno-okno/administartivnie-proceduri/students", external: true }
+          - { label: "VK факультета",                   href: "https://vk.com/rfikt_bsu",                        external: true }
+          - { label: "Instagram факультета",            href: "https://www.instagram.com/rfikt.bsu/",            external: true }
+          - { label: "VK БГУ",                          href: "https://vk.com/bsu_by",                           external: true }
+
+  # ─── НАУКА ───────────────────────────────────────────────────────────────────
+
+  module SciencePage:
+    route = "/science"
+    file = "src/app/science/page.tsx"
+    content_file = "src/content/science.mdx"
+    title = "Наука — ФРКТ БГУ"
+    source_url = "https://rct.bsu.by/science"
+
+    sections:
+      - id = "hero"
+        eyebrow = "// НАУКА И ИССЛЕДОВАНИЯ"
+        heading = "Научная деятельность ФРКТ"
+
+      - id = "conferences"
+        anchor = "conferences"
+        eyebrow = "// КОНФЕРЕНЦИИ"
+        heading = "Международные конференции"
+        cta = { label: "ВСЕ КОНФЕРЕНЦИИ →", href: "/science/conferences" }
+        items:
+          - title = "QE'2025 — «Квантовая электроника»"
+            desc = "XV Международная научно-техническая конференция"
+            deadline = "30 сентября 2025"
+            email = "qe@bsu.by"
+            href = "/science/conferences#qe2025"
+          - title = "CTDA — «Компьютерные технологии и анализ данных»"
+            desc = "Двухлетняя международная конференция"
+            website = "https://ctda.bsu.by/"
+            href = "/science/conferences#ctda"
+          - title = "Прикладная оптика, информатика, радиофизика, физика ТТ"
+            desc = "Двухлетняя международная конференция при участии НИИПФП"
+            href = "/science/conferences#applied-optics"
+
+      - id = "labs"
+        anchor = "labs"
+        eyebrow = "// ЛАБОРАТОРИИ"
+        heading = "Научно-исследовательские лаборатории"
+        cta = { label: "ПОДРОБНЕЕ →", href: "/science/labs" }
+        items:
+          - "НИЛ лазерных систем"
+          - "НИЛ полупроводниковых лазеров"
+          - "��ИЛ информационно-измерительных систем"
+          - "НИЛ робототехники и встраиваемых систем"
+          - "НИЛ методов обработки информации"
+          - "НИЛ моделирования и анализа процессов и систем"
+          - "Аэрокосмический образовательный центр БГУ"
+
+      - id = "schools"
+        anchor = "schools"
+        eyebrow = "// НАУЧНЫЕ ШКОЛЫ"
+        heading = "Ведущие научные школы"
+        items:
+          - { title: "Физика полупроводников и материаловедение", href: "/science/schools/semiconductor" }
+          - { title: "Радиофизика и информатика",                  href: "/science/schools/informatics" }
+
+  module ConferencesPage:
+    route = "/science/conferences"
+    file = "src/app/science/conferences/page.tsx"
+    content_file = "src/content/science_conferences.mdx"
+    title = "Конференции — ФРКТ БГУ"
+
+    content:
+      qe2025:
+        anchor = "qe2025"
+        full_title = "XV Международная научно-техническая конференция «Квантовая электроника» (QE'2025, Минск)"
+        organizers:
+          - "Министерство образования Республики Беларусь"
+          - "Белорусский государственный университет"
+          - "НИИПФП им. А.Н. Севченко при БГУ"
+          - "Институт физики им. Б.И. Степанова НАН Беларуси"
+          - "Белорусский республиканский фонд фундаментальных исследований"
+        topics:
+          - "Теоретические проблемы квантовой электроники"
+          - "Физика лазеров"
+          - "Системы и методы квантовой электроники"
+          - "Компьютеризация лазерных исследований"
+          - "Прикладные исследования"
+          - "Информационные технологии в радиофизике"
+          - "Методика преподавания"
+        organizing_committee:
+          chair = "М.М. Кугейко"
+          deputy = "Д.В. Ушаков"
+          secretary = "А.А. Афоненко"
+          members = ["А.В. Баркова", "Е.С. Воропай", "С.В. Гапоненко", "П.В. Кучинский", "В.Ю. Плавский", "А.Л. Толстик", "Г.П. Яблонский"]
+        publications:
+          - "Труды конференции в электронном формате, депонированы в БГУ"
+          - "Индексирование в РИНЦ"
+          - "Избранные статьи: «Журнал БГУ. Физика», «Фотоника», «Журнал прикладной спектроскопии»"
+        submission:
+          deadline = "30 сентября 2025"
+          email = "qe@bsu.by"
+          instructions = "Электронное письмо: ФИО, организация, телефон, email, формат доклада (устный/постер)"
+          sample_link = { label: "Пример материалов (Google Drive)", href: "https://drive.google.com/", external: true }
+        venue = "БГУ, НИИПФП, Минск, ул. Академика Курчатова, 7"
+        format = "Очный"
+        presentations:
+          oral = "Компьютерная презентация"
+          poster = "Стенд 1.5×1.5 м²"
+        registration_fee:
+          general = "90 белорусских рублей"
+          students = "Бесплатно (студенты и магистранты)"
+        bank:
+          org = "Белорусский государственный университет"
+          address = "220030, Минск, пр. Независимости, 4"
+          account = "BY88BLBB36320100235722001001"
+          bank = "Белинвестбанк, г. Минск"
+          bic = "BLBBBY2X"
+          unp = "100235722"
+          okpo = "02071815"
+          purpose = "«Квантовая электроника»"
+        contact:
+          address = "220030, Минск, пр. Независимости, 4, БГУ, ФРКТ, Кафедра квантовой радиофизики и оптоэлектроники"
+          phone = "+375 17 282-10-39"
+          fax = "+375 17 365-10-16"
+          email = "qe@bsu.by"
+
+      ctda:
+        anchor = "ctda"
+        full_title = "Международная научная конференция «Компьютерные технологии и анализ данных» (CTDA)"
+        frequency = "Двухлетняя"
+        organizer = "Факультет радиофизики и компьютерных технологий, БГУ"
+        sections:
+          - "Системы машинного и глубокого обучения"
+          - "Интеллектуальные технологии и системы"
+          - "Компьютерное моделирование процессов и систем"
+          - "Биоинформатика"
+        website = { href: "https://ctda.bsu.by/", external: true }
+
+      applied-optics:
+        anchor = "applied-optics"
+        full_title = "Международная конференция по прикладной оптике, информатике, радиофизике и физике твёрдого тела"
+        frequency = "Двухлетняя"
+        organizer = "НИИПФП при БГУ совместно с ФРКТ"
+        sections:
+          - "Прикладная оптика и спектроскопия"
+          - "Прикладная информатика"
+          - "Прикладная радиофизика"
+          - "Физика твёрдого тела"
+
+  # ─── НОВОСТИ ─────────────────────────────────────────────────────────────────
+
+  module NewsListPage:
+    route = "/news"
+    file = "src/app/news/page.tsx"
+    title = "Новости — ФРКТ БГУ"
+    meta_description = "Новости и события факультета радиофизики и компьютерных технологий БГУ."
+
+    features:
+      pagination = "12 материалов на страницу, URL: /news?page={n}"
+      filters = "По тегу: все | абитуриентам | студентам | наука | события | медиа"
+      layout = "Список карточек с датой, тегом, заголовком, excerpt, изображением (если есть)"
+
+    content:
+      source = "src/content/news/*.mdx — отсортировано по дате (убывание)"
+      frontmatter:
+        title: string          # обязательно
+        date: "YYYY-MM-DD"     # обязательно
+        tags: string[]         # enrollee | media | students | events | science
+        excerpt: string        # обязательно
+        image: string          # URL /images/news/... используемый как src в next/image (опционально)
+        author: string         # (опционально)
+
+    note = "Мигрировать все 21 статью из old_site/content/news/. Нормализовать slug (см. migration_notes.news_slug_normalization): строчные буквы, апострофы удалить, подчёркивания → дефисы."
+
+  module NewsDetailPage:
+    route = "/news/[slug]"
+    file = "src/app/news/[slug]/page.tsx"
+    content_pattern = "src/content/news/{slug}.mdx"
+    title_template = "{title} — ФРКТ БГУ"
+    static_params = "dynamic: все .mdx файлы в src/content/news/"
+
+    layout:
+      - "Breadcrumb: Главная / Новости / {title}"
+      - "Теги (кликабельные → /news?tag={tag})"
+      - "Дата публикации"
+      - "Заголовок (Archivo Black)"
+      - "Изображение (если есть, next/image)"
+      - "MDX body (data-pagefind-body)"
+      - "Блок «Похожие новости» — 3 статьи с тем же тегом"
+      - "← Назад к новостям (href: /news)"
+
+  # ─── КОНТАКТЫ ────────────────────────────────────────────────────────────────
+
+  module ContactsPage:
+    route = "/contacts"
+    file = "src/app/contacts/page.tsx"
+    content_file = "src/content/contacts.mdx"
+    title = "Контакты — ФРКТ БГУ"
+    meta_description = "Адрес, телефоны, email и как добраться до факультета радиофизики и компьютерных технологий БГУ."
+    source_url = "https://rct.bsu.by/contacts"
+
+    sections:
+      - id = "main"
+        eyebrow = "// КОНТАКТЫ"
+        heading = "Свяжитесь с нами"
+        address = "220045, Республика Беларусь, г. Минск, ул. Академика Курчатова, 5"
+        phone = "+375 (17) 209-58-18"
+        phone_applicants = "+375 (17) 209-58-18"
+        email = "rct@bsu.by"
+        dean:
+          name = "Ушаков Дмитрий Владимирович"
+          title = "Декан, д-р физ.-мат. наук, доцент"
+          phone = "+375 (17) 209-59-03"
+          email = "ushakovdv@bsu.by"
+          photo = "/images/dean_ushakov.jpg"
+
+      - id = "map"
+        component = "MapEmbed"
+        note = "Yandex Maps iframe или статичное изображение карты. Точка: Минск, ул. Академика Курчатова, 5"
+        fallback_image = "/images/map_faculty.jpg"
+        yandex_maps_url = "https://yandex.by/maps/?pt=27.477,53.857&z=16&l=map"
+
+      - id = "directions"
+        anchor = "directions"
+        eyebrow = "// КАК ДОБРАТЬСЯ"
+        heading = "Транспорт"
+        bus:
+          - { routes: "№47с", from: "Ж/д вокзал (ост. «Вокзал»)", stop: "«Факультет радиофизики»" }
+          - { routes: "№96, №132", stop: "«Факультет радиофизики»" }
+          - { routes: "№28, №30ас, №97, №104, №114с, №134с, №144с", stop: "«Поворот к корпусу БГУ» / «ул. Наполеона»" }
+          - { label: "Расписание автобусов Минска", href: "http://www.minsktrans.by/city/#minsk/bus", external: true }
+        train:
+          - { direction: "Направление Столбцы", stop: "ст. «Роща»" }
+          - { label: "Расписание электричек", href: "http://rasp.rw.by/", external: true }
+        metro:
+          - { line: "Автозаводская линия (красная)", station: "«Малиновка» (конечная)", walk: "10 мин пешком мимо ОМА, к пешеходному переходу через МКАД" }
+
+      - id = "social"
+        eyebrow = "// МЫ В СОЦСЕТЯХ"
+        items:
+          - { platform: "VKontakte", url: "https://vk.com/rfikt_bsu" }
+          - { platform: "Instagram", url: "https://www.instagram.com/rct.bsu/" }
+          - { platform: "Telegram",  url: "https://t.me/rct_bsu" }
+          - { platform: "Facebook",  url: "https://www.facebook.com/groups/1716620758578504" }
+          - { platform: "TikTok",    url: "https://www.tiktok.com/@rfiktss" }
+
+  # ─── КОНТЕНТ ─────────────────────────────────────────────────────────────────
+
+  content:
+    format = "MDX с YAML frontmatter"
+    directory = "src/content/"
+    migration_script = "scripts/migrate-content.js"
+    note = "Скрипт читает old_site/content/*.md и конвертирует в .mdx с нужным frontmatter"
+
+    files:
+      - { dest: "src/content/home.mdx",                        source: "old_site/content/home.md" }
+      - { dest: "src/content/faculty.mdx",                     source: "old_site/content/faculty.md" }
+      - { dest: "src/content/faculty_administration.mdx",      source: "old_site/content/faculty_administration.md" }
+      - { dest: "src/content/faculty_staff.mdx",               source: "old_site/content/faculty_staff.md" }
+      - { dest: "src/content/faculty_council.mdx",             source: "old_site/content/faculty_council.md" }
+      - { dest: "src/content/admissions.mdx",                  source: "old_site/content/enrollee.md" }
+      - { dest: "src/content/education.mdx",                   source: "old_site/content/education.md" }
+      - { dest: "src/content/science.mdx",                     source: "old_site/content/science.md" }
+      - { dest: "src/content/science_conferences.mdx",         source: "old_site/content/science.md (раздел конференций)" }
+      - { dest: "src/content/contacts.mdx",                    source: "old_site/content/contacts.md" }
+    departments:
+      pattern = "src/content/departments/{slug}.mdx"
+      note = "Каждая кафедра имеет основной файл и 4 дополнительных подраздела (sub_files)."
+      MISSING_FILE = "old_site/content/dept_teleit_scientific_directions.md отсутствует — раздел 'Научные направления' для кафедры teleit генерировать из данных SODL или оставить пустым."
+      sources:
+        - slug = "rdmt"
+          source = "old_site/content/dept_rdmt.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_rdmt_scientific_directions.md"
+            science               = "old_site/content/dept_rdmt_science.md"
+            staff                 = "old_site/content/dept_rdmt_staff.md"
+            famous_graduates      = "old_site/content/dept_rdmt_famous_graduates.md"
+        - slug = "qro"
+          source = "old_site/content/dept_qro.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_qro_scientific_directions.md"
+            science               = "old_site/content/dept_qro_science.md"
+            staff                 = "old_site/content/dept_qro_staff.md"
+            famous_graduates      = "old_site/content/dept_qro_famous_graduates.md"
+        - slug = "physelnano"
+          source = "old_site/content/dept_physelnano.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_physelnano_scientific_directions.md"
+            science               = "old_site/content/dept_physelnano_science.md"
+            staff                 = "old_site/content/dept_physelnano_staff.md"
+            famous_graduates      = "old_site/content/dept_physelnano_famous_graduates.md"
+        - slug = "ics"
+          source = "old_site/content/dept_ics.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_ics_scientific_directions.md"
+            science               = "old_site/content/dept_ics_science.md"
+            staff                 = "old_site/content/dept_ics_staff.md"
+            famous_graduates      = "old_site/content/dept_ics_famous_graduates.md"
+            competencies          = "old_site/content/dept_ics_competencies.md"
+        - slug = "kis"
+          source = "old_site/content/dept_kis.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_kis_scientific_directions.md"
+            science               = "old_site/content/dept_kis_science.md"
+            staff                 = "old_site/content/dept_kis_staff.md"
+            famous_graduates      = "old_site/content/dept_kis_famous_graduates.md"
+        - slug = "teleit"
+          source = "old_site/content/dept_teleit.md"
+          sub_files:
+            scientific_directions = null
+            scientific_directions_note = "ОТСУТСТВУЕТ: old_site/content/dept_teleit_scientific_directions.md"
+            science               = "old_site/content/dept_teleit_science.md"
+            staff                 = "old_site/content/dept_teleit_staff.md"
+            famous_graduates      = "old_site/content/dept_teleit_famous_graduates.md"
+        - slug = "sacm"
+          source = "old_site/content/dept_sacm.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_sacm_scientific_directions.md"
+            science               = "old_site/content/dept_sacm_science.md"
+            staff                 = "old_site/content/dept_sacm_staff.md"
+            famous_graduates      = "old_site/content/dept_sacm_famous_graduates.md"
+        - slug = "phaerotech"
+          source = "old_site/content/dept_phaerotech.md"
+          sub_files:
+            scientific_directions = "old_site/content/dept_phaerotech_scientific_directions.md"
+            science               = "old_site/content/dept_phaerotech_science.md"
+            staff                 = "old_site/content/dept_phaerotech_staff.md"
+            famous_graduates      = "old_site/content/dept_phaerotech_famous_graduates.md"
+    programs:
+      note = "Файлы специальностей находятся в old_site/content/specialties/. Каждый файл — отдельный трек/направление. old_site/content/specialties.md — обзорная страница, использовать как справочный источник для BachelorIndexPage."
+      bachelor:
+        # РФИТ — главная специальность + 5 треков
+        - { slug: "rphit",  source: "old_site/content/specialties/rphit.md",   tracks_dir: "old_site/content/specialties/",
+            track_files: ["aero.md","inform.md","kptms.md","fpkt.md","rdt.md"] }
+        # Прикладная информатика — нет отдельного файла ai.md, контент агрегируется из треков
+        - { slug: "ai",     source: null,   note: "Нет отдельного ai.md — использовать данные из SODL модуля BachelorProgramDetailPage.static_params.ai",
+            track_files: ["old_site/content/specialties/ics.md","old_site/content/specialties/bd.md"] }
+        - { slug: "cs",     source: "old_site/content/specialties/cs.md" }
+        - { slug: "ie",     source: "old_site/content/specialties/ie.md" }
+      master:
+        # rfitm.md отсутствует — контент генерируется из данных модуля MasterProgramDetailPage
+        - { slug: "rfitm",  source: null,   note: "Файл old_site/content/specialties/rfitm.md отсутствует — использовать данные из SODL модуля" }
+        - { slug: "cs-mag", source: "old_site/content/specialties/cs-mag.md" }
+        - { slug: "aerocos",source: "old_site/content/specialties/aerocos.md" }
+    admissions_sub:
+      note = "Страницы поступления по специальностям: old_site/content/enrollee/{slug}.md"
+      MIGRATION_WARNING = "Файл old_site/content/enrollee/сs.md содержит кириллическую букву 'с'. Переименовать в cs.md в ходе миграции."
+      files:
+        - { slug: "rphit",  dest: "src/content/admissions/rphit.mdx",   source: "old_site/content/enrollee/rphit.md" }
+        - { slug: "ai",     dest: "src/content/admissions/ai.mdx",       source: "old_site/content/enrollee/ai.md" }
+        - { slug: "cs",     dest: "src/content/admissions/cs.mdx",       source: "old_site/content/enrollee/сs.md",  rename_required: true }
+        - { slug: "inelec", dest: "src/content/admissions/inelec.mdx",   source: "old_site/content/enrollee/inelec.md" }
+        - { slug: "rfitm",  dest: "src/content/admissions/rfitm.mdx",    source: "old_site/content/enrollee/rfitm.md" }
+        - { slug: "cs-mag", dest: "src/content/admissions/cs-mag.mdx",   source: "old_site/content/enrollee/cs-mag.md" }
+        - { slug: "aerot",  dest: "src/content/admissions/aerot.mdx",    source: "old_site/content/enrollee/aerot.md" }
+    science_schools:
+      files:
+        - { slug: "semiconductor", dest: "src/content/science/school-semiconductor.mdx", source: "old_site/content/science/school-semiconductor.md" }
+        - { slug: "informatics",   dest: "src/content/science/school-informatics.mdx",   source: "old_site/content/science/school-informatics.md" }
+    news:
+      directory = "src/content/news/"
+      naming = "{YYYY-MM-DD}-{slug}.mdx"
+      source = "old_site/news/ — все статьи"
+      frontmatter_schema:
+        title: string
+        date: "YYYY-MM-DD"
+        tags: "('enrollee'|'media'|'students'|'events'|'science')[]"
+        excerpt: string
+        image: "string (опционально)"
+        author: "string (опционально)"
+
+  # ─── КОНФИГУРАЦИЯ ─────────────────────────────────────────────────────────────
+
+  config:
+    next_config:
+      file = "next.config.js"
+      output = "export"
+      trailingSlash = true
+      images_unoptimized = true
+      note = "output:'export' для статического деплоя. images.unoptimized:true если не Vercel."
+      redirects:
+        - { source: "/enrollee",         destination: "/admissions",           permanent: true }
+        - { source: "/enrollee/:path*",  destination: "/admissions/:path*",    permanent: true }
+        - { source: "/specialties",      destination: "/programs",             permanent: true }
+        - { source: "/specialties/:path*", destination: "/programs/bachelor/:path*", permanent: true }
+        - { source: "/cookieCons",       destination: "/",                     permanent: false }
+      note_redirects = "Redirects не работают в output:'export'. Реализовать через middleware.ts или nginx/apache rewrite rules на сервере."
+
+    tailwind:
+      file = "tailwind.config.ts"
+      content = ["./src/**/*.{ts,tsx,mdx}"]
+      extend_colors:
+        "bg-primary":   "#1C1C1E"
+        "bg-section":   "#141416"
+        "accent":       "#1A56DB"
+        "text-primary": "#FFFFFF"
+        "text-secondary":"#8A8A8E"
+        "text-muted":   "#6B6B70"
+        "border-col":   "#2C2C2E"
+      extend_fontFamily:
+        "display": ["Archivo Black", "sans-serif"]
+        "body":    ["Inter", "sans-serif"]
+
+    tsconfig:
+      strict = true
+      paths = { "@/*": ["./src/*"] }
+
+    package_json_scripts:
+      dev = "next dev"
+      build = "next build"
+      index-search = "npx pagefind --site out --output-path public/pagefind"
+      build:full = "next build && npm run index-search"
+      lint = "next lint"
+      typecheck = "tsc --noEmit"
+      validate-links = "npx broken-link-checker http://localhost:3000 -ro --exclude /docs/"
+
+  # ─── ПОЛИТИКИ ────────────────────────────────────────────────────────────────
+
+  policy LinkIntegrity:
+    severity = "error"
+    rules:
+      - "Каждый href в модулях ОБЯЗАН вести на реальный route или внешний URL"
+      - "Нет href='#' в продакшене (только anchor href='#anchor-id')"
+      - "Внешние ссылки: target='_blank' rel='noopener noreferrer'"
+      - "PDF/DOCX: файлы должны существовать в public/docs/ или быть внешними URL"
+      - "Все [slug] роуты ОБЯЗАНЫ иметь generateStaticParams с полным списком значений"
+      - "Новостные [slug] роуты генерируются из имён файлов src/content/news/"
+      - "Статическая сборка (next build) без 404-ошибок"
+
+  policy DesignSystem:
+    severity = "warning"
+    rules:
+      - "Только цвета из tailwind.config.ts (никаких hardcoded hex в JSX)"
+      - "Eyebrow-метки: '// UPPERCASE' Inter 11px, цвет accent, letter-spacing 0.2em"
+      - "Все display-заголовки: font-family display (Archivo Black)"
+      - "Body-текст: font-family body (Inter)"
+      - "Отступ между карточками в сетках: gap-[2px]"
+      - "Accent bar: w-10 h-[3px] bg-accent"
+      - "Hover на карточках: одна выделенная — bg-accent text-white"
+
+  policy Performance:
+    severity = "warning"
+    rules:
+      - "next/image для всех изображений (WebP, lazy loading)"
+      - "Шрифты через @fontsource (self-hosted, нет внешнего CDN)"
+      - "Pagefind JS загружается только при открытии SearchOverlay (dynamic import)"
+      - "Framer Motion: только CSS-transforms (translateX/Y/scale), нет layout animations на list items"
+      - "Цель: Lighthouse ≥ 90 по Performance, Accessibility, Best Practices, SEO"
+
+  policy Accessibility:
+    severity = "error"
+    rules:
+      - "Все <img> и next/Image: осмысленный alt (не пустой для информативных изображений)"
+      - "Все интерактивные элементы: keyboard-navigable"
+      - "Focus: outline: 2px solid #1A56DB, outline-offset: 2px"
+      - "Контраст: WCAG 2.1 AA (4.5:1 для основного текста)"
+      - "<html lang='ru'>; английские страницы lang='en'"
+      - "Skip-to-content: первый focusable элемент на каждой странице"
+      - "Семантика: <main>, <nav>, <header>, <footer>, <article> (новости), <section> с aria-label"
+
+  policy SEO:
+    severity = "warning"
+    rules:
+      - "Каждая страница: уникальные <title> и <meta name='description'>"
+      - "Формат title: '{Название страницы} — ФРКТ БГУ'"
+      - "Open Graph: og:title, og:description, og:image, og:type на каждой странице"
+      - "Canonical URL на каждой странице"
+      - "robots.txt и sitemap.xml генерируются при сборке (next-sitemap или встроенный)"
+      - "JSON-LD: Organization на главной, BreadcrumbList на всех внутренних страницах"
+
+  policy ContentPreservation:
+    severity = "error"
+    rules:
+      - "Весь текст из old_site/content/ мигрирован в src/content/"
+      - "Все PDF из old_site в public/docs/"
+      - "Все изображения из old_site/assets/images/ в public/images/"
+      - "Логотипы партнёров в public/images/partners/"
+      - "Контактные данные (телефоны, email, адрес) — точное соответствие источнику"
+      - "Плановый набор 2026 — точные цифры из оригинала"
+      - "ФИО и учёные степени заведующих кафедрами — точное соответствие"
+      - "Банковские реквизиты конференции QE'2025 — без изменений"
+
+  # ─── ПАЙПЛАЙН СБОРКИ ─────────────────────────────────────────────────────────
+
+  pipeline Build:
+    steps:
+      - step = "install"
+        cmd = "pnpm install"
+
+      - step = "copy-assets"
+        cmd = "node scripts/copy-assets.js"
+        note = "Копирует old_site/assets/images/ → public/images/, old_site PDF → public/docs/"
+
+      - step = "migrate-content"
+        cmd = "node scripts/migrate-content.js"
+        note = "Конвертирует old_site/content/*.md → src/content/*.mdx с frontmatter"
+
+      - step = "build"
+        cmd = "pnpm build"
+        output = "out/ (статические HTML-файлы)"
+
+      - step = "index-search"
+        cmd = "npx pagefind --site out --output-path public/pagefind"
+        note = "ОБЯЗАТЕЛЬНО после build. Создаёт индекс Pagefind для поиска."
+
+      - step = "validate-links"
+        cmd = "npx serve out -p 3000 & sleep 3 && npx broken-link-checker http://localhost:3000 -ro"
+        note = "Проверяет все внутренние ссылки. Нет 404-ошибок — обязательное условие."
+
+      - step = "lint"
+        cmd = "pnpm lint && pnpm typecheck"
+
+  pipeline Dev:
+    steps:
+      - step = "dev"
+        cmd = "pnpm dev"
+        note = "Pagefind недоступен в dev-режиме (требует build). Для теста поиска — build:full."
+
+  # ─── ЗАМЕТКИ ПО МИГРАЦИИ ─────────────────────────────────────────────────────
+
+  migration_notes:
+
+    missing_files:
+      - path = "old_site/content/dept_teleit_scientific_directions.md"
+        status = "ОТСУТСТВУЕТ"
+        action = "Показать заглушку на странице /faculty/departments/teleit в разделе 'Научные направления'"
+
+      - path = "old_site/content/specialties/rfitm.md"
+        status = "ОТСУТСТВУЕТ"
+        action = "Содержимое страницы /programs/master/rfitm генерировать из данных модуля MasterProgramDetailPage.static_params.rfitm"
+
+      - path = "old_site/content/specialties/ai.md"
+        status = "ОТСУТСТВУЕТ"
+        action = "Содержимое страницы /programs/bachelor/ai генерировать из данных модуля BachelorProgramDetailPage.static_params.ai + треки ics.md, bd.md"
+
+      - path = "public/images/dean_ushakov.jpg"
+        status = "ОТСУТСТВУЕТ локально"
+        action = "Скачать с https://rct.bsu.by/ или использовать placeholder. Используется на страницах /faculty/administration и /admissions."
+
+      - path = "public/images/map_faculty.jpg"
+        status = "ОТСУТСТВУЕТ локально"
+        action = "Создать статичный скриншот из Яндекс.Карты или использовать iframe. Резервный для /contacts."
+
+      - path = "public/docs/*.pdf"
+        status = "PDF-файлы отсутствуют в old_site"
+        action = "Все PDF необходимо скачать с https://rct.bsu.by/ вручную и поместить в public/docs/ согласно разделу assets.documents. Документы для скачивания: admission_rules_2026.pdf, bsu_admission_procedure_2025.pdf, rcft_admission_features_2025.pdf, preferential_categories.pdf, diploma_template.docx, и прочие учебные программы (syllabi/)."
+
+    filename_issues:
+      - path = "old_site/content/enrollee/сs.md"
+        issue = "Кириллическая буква 'с' (U+0441) в имени файла вместо латинской 'c' (U+0063)"
+        action = "В scripts/migrate-content.js: при копировании этого файла использовать целевое имя 'cs.md' (латиница)"
+        migrate_code = "if (filename === 'сs.md') destName = 'cs.md'"
+
+    news_count:
+      actual = 21
+      note_in_sodl = "В SODL упоминается 35 страниц новостей — это страницы пагинации оригинального сайта, а не статьи. Реальных статей в old_site/content/news/ = 21."
+
+    news_slug_normalization:
+      problem = "Имена файлов новостей не всегда пригодны для URL. Скрипт миграции ОБЯЗАН нормализовать slug."
+      rules:
+        - "Привести к нижнему регистру"
+        - "Заменить пробелы и подчёркивания на дефисы"
+        - "Удалить апострофы и специальные символы (пример: 'People's_Guest' → 'peoples-guest')"
+        - "Сохранить дату-префикс: YYYY-MM-DD-slug"
+      examples:
+        - from = "2025-04-16-People's_Guest.md"
+          to   = "2025-04-16-peoples-guest.mdx"
+        - from = "2025-11-16-RCAP_2025.md"
+          to   = "2025-11-16-rcap-2025.mdx"
+        - from = "2026-03-10-Pozdnyakov_dv.md"
+          to   = "2026-03-10-pozdnyakov-dv.mdx"
+      note = "generateStaticParams для /news/[slug] должен читать имена файлов src/content/news/*.mdx после нормализации."
+
+    science_split:
+      problem = "old_site/content/science.md содержит весь научный контент — нужно разбить на два MDX-файла."
+      split_logic:
+        science_mdx:
+          dest = "src/content/science.mdx"
+          content = "Весь текст кроме подробных данных о конференциях: общие направления, лаборатории (краткий список), научные школы (краткий список)."
+        science_conferences_mdx:
+          dest = "src/content/science_conferences.mdx"
+          content = "Детальные данные о конференциях: QE'2025, CTDA, Applied Optics — всё что относится к конференциям."
+        note = "Если в science.md нет явных секций — весь текст дублировать в оба файла; ConferencesPage отобразит inline-данные из SODL модуля ConferencesPage."
+
+    image_paths_note:
+      rule = "В JSX-компонентах (next/image src, <img> src): использовать /images/... (URL относительно public/ root)."
+      rule2 = "В скриптах миграции и SODL content.assets: использовать public/images/... (файловые пути)."
+      note = "next/image НЕ принимает пути типа 'public/images/foo.jpg' — только '/images/foo.jpg'."
+
+    redirects_implementation:
+      problem = "redirects() в next.config.js НЕ работают с output:'export' (статическая сборка)."
+      solution_option_a = "middleware.ts в корне src/: перехватывает запросы и делает Next.js redirect. Работает на Vercel и серверах с Node.js."
+      solution_option_b = "nginx/apache rewrite rules на сервере (для VPS/shared hosting)."
+      solution_option_c = "Статические 404.html с JS-редиректом (fallback, не SEO-friendly)."
+      recommendation = "Для деплоя на static hosting: создать src/middleware.ts с маппингом старых URL → новых. Это работает в Next.js App Router даже при output:'export' на Vercel."
+      middleware_pattern = "export function middleware(req) { const oldPaths = {'/enrollee': '/admissions', ...}; const redirect = oldPaths[req.nextUrl.pathname]; if (redirect) return NextResponse.redirect(new URL(redirect, req.url)); }"

@@ -1,0 +1,759 @@
+system "RCFT_ContentFormattingFix":
+  version = "1.0.0"
+  description = "Патч-спецификация: исправление форматирования контента сайта ФРКТ БГУ — структура MDX, читаемость текстов, изображения персоналий, иерархия заголовков. Архитектура и стек не меняются."
+  extends_context = "rcft_v2.sodl (дизайн-токены, стек, архитектура — без изменений)"
+
+  stack:
+    language = "TypeScript"
+    framework = "Next.js 14 (App Router, output: export)"
+    styling = "Tailwind CSS v3 (tailwind.config.ts)"
+    content = "MDX (next-mdx-remote/rsc — ТОЛЬКО /rsc субпакет)"
+    icons = "Lucide React (уже установлен)"
+    note = "НЕ добавлять новые npm-зависимости"
+
+  # ─── КОНТЕНТНЫЙ КОНТЕКСТ ДЛЯ АГЕНТА ────────────────────────────────────────
+
+  content_context:
+    source_of_truth = "old_site/ — глубокое клонирование https://rct.bsu.by/ + сам сайт rct.bsu.by"
+    content_dir = "src/content/ — 95 MDX-файлов"
+    components_dir = "src/components/"
+    pages_dir = "src/app/"
+
+    available_person_photos:
+      - file = "/public/images/dean_ushakov.svg"
+        person = "Ушаков Дмитрий Владимирович (декан)"
+        usage = "В administration/page.tsx — заменить placeholder 'ДУ' на <img>"
+      - note = "Для всех остальных персоналий фото в проекте отсутствуют — рендерить плейсхолдер с инициалами"
+
+    design_tokens:
+      bg_primary = "#1C1C1E"
+      bg_section = "#141416"
+      accent = "#1A56DB"
+      text_primary = "#FFFFFF"
+      text_secondary = "#8A8A8E"
+      text_muted = "#6B6B70"
+      border = "#2C2C2E"
+      font_display = "Archivo Black"
+      font_body = "Inter"
+
+    prose_base_class = "prose prose-invert max-w-none"
+    dept_page_prose = "prose prose-invert prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary"
+
+  # ─── INTENT ─────────────────────────────────────────────────────────────────
+
+  intent:
+    primary = "Привести в порядок форматирование и читаемость контента без изменения архитектуры и дизайн-системы"
+
+    outcomes = [
+      "Страница деканата (/faculty/administration) отображает персон в чётком, читаемом формате",
+      "Декан Ушаков Д.В. показывается с фотографией (dean_ushakov.svg) вместо текстового плейсхолдера",
+      "Персоны без фото получают аватар-плейсхолдер с инициалами и accent-фоном",
+      "Все страницы *-staff.mdx используют ### (h3) для имён вместо #### (h4)",
+      "Описания кафедр (*-dept.mdx) используют ## / ### заголовки вместо **bold** псевдо-заголовков",
+      "Исторические справки кафедр оформлены в blockquote для визуального выделения",
+      "Устранены все артефакты парсинга ([]/path и ]/path) из faculty_administration.mdx и faculty_staff.mdx",
+      "Устранены PDF-переносы слов (измери-тельных → измерительных) в competencies и scientific-directions",
+      "Prose-классы страниц факультета добавлены стили для h2, h3, blockquote"
+    ]
+
+    out_of_scope = [
+      "Изменение архитектуры (Next.js App Router, SSG, Pagefind — не трогать)",
+      "Изменение дизайн-системы — цвета, шрифты, брейкпоинты из rcft_v2.sodl неизменны",
+      "Добавление новых страниц или маршрутов",
+      "Изменение Header, Footer, HeroSection или других layout-компонентов",
+      "Добавление новых npm-зависимостей",
+      "Изменение tailwind.config.ts, next.config.js, tsconfig.json",
+      "Изменение страниц за пределами faculty/*, departments/*"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 1: PersonCard — универсальный компонент персоны
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module PersonCardComponent:
+    owns = ["src/components/ui/PersonCard.tsx"]
+
+    description = """
+    Новый React Server Component для отображения карточки персоны.
+    Используется в:
+      - src/app/faculty/administration/page.tsx (через JSX напрямую)
+      - src/app/faculty/departments/[slug]/page.tsx (через MDXRemote components)
+      - src/app/faculty/staff/page.tsx (через MDXRemote components)
+    """
+
+    api:
+      model PersonCardProps:
+        field name: string
+        field role: Optional[string]
+        field degree: Optional[string]
+        field phone: Optional[string]
+        field email: Optional[string]
+        field photo: Optional[string]
+        field scopus: Optional[string]
+        field scholar: Optional[string]
+
+    invariants:
+      invariant = "НЕ использовать 'use client' — компонент должен быть RSC"
+      invariant = "НЕ использовать next/image — статический экспорт требует обычный <img>"
+      invariant = "Если photo не передан — показывать аватар-плейсхолдер с инициалами"
+      invariant = "Инициалы: первые буквы имени и фамилии (разбить name по пробелу)"
+      invariant = "Email передаётся БЕЗ mailto: — компонент сам строит href"
+      invariant = "Если поле не передано — его блок не рендерится (нет пустых контейнеров)"
+      invariant = "Использовать только дизайн-токены из tailwind.config.ts"
+      invariant = "Корректно работать внутри prose MDX-контекста (не ломать prose-flow)"
+
+    acceptance:
+      test = "Рендерится с только name — без ошибок, показывает инициалы"
+      test = "Рендерится с photo=/images/dean_ushakov.svg — показывает картинку"
+      test = "Поля email, scopus, scholar дают кликабельные ссылки"
+      test = "Нет TypeScript ошибок (строгий режим tsconfig.json)"
+      test = "Визуально консистентен с Concept E (тёмный фон, accent-цвет)"
+
+    artifacts = ["src/components/ui/PersonCard.tsx"]
+
+    implementation_guide:
+      layout = """
+        flex items-start gap-4 py-5 border-b border-[#2C2C2E] last:border-0
+        Слева: аватар 64×64 (rounded-full)
+        Справа: info-блок (flex-1)
+      """
+      avatar_with_photo = """
+        <img src={photo} alt={name}
+             className="w-16 h-16 rounded-full object-cover flex-shrink-0 border border-[#2C2C2E]" />
+      """
+      avatar_placeholder = """
+        <div className="w-16 h-16 rounded-full bg-[#1A56DB] flex items-center justify-center
+                        flex-shrink-0 font-display text-white text-lg select-none">
+          {initials}  {/* первые буквы имени + фамилии */}
+        </div>
+      """
+      name_element = "h3 — font-display text-base text-white leading-snug mb-0.5"
+      role_degree = "p — text-sm text-[#8A8A8E] mb-2"
+      contacts_row = "flex flex-wrap gap-x-4 gap-y-1 text-sm mt-1"
+      phone_style = "text-[#8A8A8E]"
+      link_style = "text-[#1A56DB] hover:underline"
+      external_link_label_scopus = "Scopus ↗"
+      external_link_label_scholar = "Google Scholar ↗"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 2: Регистрация MDX-компонентов
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module MDXComponentsRegistry:
+    owns = [
+      "src/app/faculty/departments/[slug]/page.tsx",
+      "src/app/faculty/staff/page.tsx"
+    ]
+    requires = [PersonCardComponent]
+
+    description = """
+    Обновить MDXRemote вызовы чтобы передавать components={{ PersonCard }}.
+    Тогда <PersonCard name="..." /> можно использовать в MDX-файлах.
+
+    Паттерн изменения в page.tsx:
+      import PersonCard from '@/components/ui/PersonCard'
+      ...
+      <MDXRemote source={content} components={{ PersonCard }} />
+
+    ВАЖНО: импорт из 'next-mdx-remote/rsc' (не из 'next-mdx-remote').
+    """
+
+    invariants:
+      invariant = "Существующая логика страниц (breadcrumbs, tabs, metadata, layout) не изменяется"
+      invariant = "Импорт PersonCard только там где это необходимо"
+      invariant = "MDXRemote остаётся из 'next-mdx-remote/rsc'"
+
+    acceptance:
+      test = "<PersonCard name='Test' /> в MDX-файле рендерится без 500-ошибок"
+      test = "Существующий MDX-контент (##, ###, списки, ссылки) работает как прежде"
+
+    artifacts = [
+      "src/app/faculty/departments/[slug]/page.tsx",
+      "src/app/faculty/staff/page.tsx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 3: Исправление administration/page.tsx — фото декана
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module DeanPhotoFix:
+    owns = ["src/app/faculty/administration/page.tsx"]
+    requires = [PersonCardComponent]
+
+    description = """
+    В текущем administration/page.tsx секция декана содержит текстовый плейсхолдер:
+      <div>  {/* w-32 h-32 ... */}
+        <span className="font-display text-3xl text-text-muted">ДУ</span>
+      </div>
+
+    Заменить на реальную фотографию:
+      <img
+        src="/images/dean_ushakov.svg"
+        alt="Ушаков Дмитрий Владимирович"
+        className="w-32 h-32 sm:w-40 sm:h-40 object-cover border border-border-col"
+      />
+
+    Файл /public/images/dean_ushakov.svg СУЩЕСТВУЕТ в проекте.
+    В JSX путь к изображению: '/images/dean_ushakov.svg' (БЕЗ '/public' префикса).
+    """
+
+    invariants:
+      invariant = "Заменяется только placeholder-div с инициалами ДУ — остальная разметка секции неизменна"
+      invariant = "Путь к файлу: /images/dean_ushakov.svg (не /public/images/...)"
+      invariant = "Добавить PersonCard в imports и зарегистрировать в MDXRemote components={{ PersonCard }}"
+
+    acceptance:
+      test = "На странице /faculty/administration отображается фото декана"
+      test = "Фото пропорционально вписывается в секцию (w-32/sm:w-40)"
+
+    artifacts = ["src/app/faculty/administration/page.tsx"]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 4: Исправление faculty_administration.mdx
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module AdminMDXFix:
+    owns = ["src/content/faculty_administration.mdx"]
+
+    description = """
+    ПОЛНОЕ ПЕРЕПИСЫВАНИЕ faculty_administration.mdx.
+
+    ТЕКУЩАЯ ПРОБЛЕМА — артефакты парсинга:
+      []/faculty/departments/phaerotech          ← мусор (сломанная ссылка на фото)
+      [                                          ← мусор
+      #### Ушаков Дмитрий Владимирович
+      декан
+      доктор физ.-мат. наук, доцент
+      +375 (17) 209-59-03
+      ]/faculty/departments/phaerotech           ← мусор
+      []/faculty/departments/phaerotech[ushakovdv@bsu.by](...) | [Scopus](...) | ...
+
+    ПРАВИЛО КОНВЕРТАЦИИ каждой персоны:
+      1. Удалить все строки-артефакты []/path, ]/path, [ без закрывающей скобки
+      2. Имя: #### Имя → <PersonCard name="Имя" ...пропсы... />
+      3. Поля: role (должность), degree (степень), phone, email, scopus, scholar
+      4. Email из [email@bsu.by](mailto:email@bsu.by) → email="email@bsu.by"
+      5. Scopus URL → scopus="https://..."
+      6. Google Scholar URL → scholar="https://..."
+      7. Телефон → phone="+375 (17) ..."
+      8. Должность и степень — разделить: role/degree
+
+    ПЕРСОНЫ в файле (порядок сохранить):
+      - Ушаков Дмитрий Владимирович | декан | доктор физ.-мат. наук, доцент | +375(17)209-59-03 | ushakovdv@bsu.by
+      - Янукович Татьяна Петровна | зам. декана (идеология) | канд. физ.-мат. наук, доцент | +375(17)209-59-06 | yanukovichTP@bsu.by
+      - Поляков Александр Владимирович | зам. декана (учебная работа) | доктор физ.-мат. наук, профессор | +375(17)209-58-17 | polyakov@bsu.by
+      - Людчик Олег Ростиславович | зам. декана (стратегическое развитие) | канд. физ.-мат. наук, доцент | +375(17)398-75-45 | lyudchik@bsu.by
+      - Лобанок Михаил Владимирович | зам. декана (учебная и профориентационная работа) | нет степени | +375(17)209-58-18 | lobanokMV@bsu.by
+      - Раткевич Сергей Владимирович | зам. декана (научная работа) | нет степени | +375(17)209-58-19 | ratkevich@bsu.by
+      - Григорчук Елена Сергеевна | ст. преподаватель, помощник декана | нет степени | +375(17)209-58-19 | Grigorchuk@bsu.by
+      - Мазаник Лариса Сергеевна | ведущий специалист | нет степени | +375(17)209-58-18 | MazanikLS@bsu.by
+      - Синкевич Мирослава Марьяновна | методист I категории | нет степени | +375(17)209-58-18 | SinkevichMira@bsu.by
+      - Богуслав Илона Сергеевна | специалист | нет степени | +375(17)209-59-35 | boguslavIS@bsu.by
+
+    НАВИГАЦИОННЫЕ БЛОКИ в конце файла — преобразовать в чистый markdown:
+      - "Страница: [1][2]" — УДАЛИТЬ (пагинация управляется страницей)
+      - "#### Кафедры" → ## Кафедры (список кафедр — сохранить)
+      - "#### Персоналии" → ## Персоналии (список ссылок — сохранить)
+      - "#### Совет факультета" и далее → ## ... (сохранить все разделы)
+
+    Ссылки вида /faculty/staff/MazanikLS — оставить как есть (внутренние ссылки)
+    """
+
+    invariants:
+      invariant = "Все 10 персон деканата сохранены с полными контактными данными"
+      invariant = "Для Ушакова Д.В. поле photo НЕ передаётся в PersonCard (фото уже в hardcoded секции page.tsx)"
+      invariant = "Нет артефактов парсинга (нет []/path, ]/path)"
+      invariant = "Навигационные разделы (кафедры, персоналии, дисциплины...) сохранены"
+      invariant = "Строка 'Страница: [1]...[2]...' удалена"
+
+    acceptance:
+      test = "MDX-файл парсится gray-matter без ошибок"
+      test = "Все PersonCard компоненты имеют обязательный prop name"
+      test = "Навигационные списки в конце файла — валидный markdown"
+      test = "Email адреса без префикса mailto: (PersonCard сам добавляет)"
+
+    artifacts = ["src/content/faculty_administration.mdx"]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 5: Исправление faculty_staff.mdx
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module StaffGlobalMDXFix:
+    owns = ["src/content/faculty_staff.mdx"]
+
+    description = """
+    ПОЛНОЕ ПЕРЕПИСЫВАНИЕ faculty_staff.mdx — содержит те же артефакты что и faculty_administration.mdx.
+    Применить те же правила конвертации (см. AdminMDXFix).
+    Список персон и навигационных разделов идентичен faculty_administration.mdx.
+    Навигационные блоки в конце (информационные ресурсы, внутренние организации и т.д.) — сохранить в чистом markdown.
+    """
+
+    invariants:
+      invariant = "Персоны конвертированы в <PersonCard /> с теми же пропсами что в AdminMDXFix"
+      invariant = "Все навигационные блоки (## Кафедры, ## Персоналии, ## Информационные ресурсы...) сохранены"
+      invariant = "Нет артефактов парсинга"
+
+    acceptance:
+      test = "MDX-файл парсится без ошибок"
+      test = "Персоны рендерятся как PersonCard"
+      test = "Длинный список навигационных ссылок в конце отображается корректно"
+
+    artifacts = ["src/content/faculty_staff.mdx"]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 6: Исправление *-staff.mdx файлов кафедр
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module DeptStaffMDXFix:
+    owns = [
+      "src/content/departments/ics-staff.mdx",
+      "src/content/departments/kis-staff.mdx",
+      "src/content/departments/rdmt-staff.mdx",
+      "src/content/departments/qro-staff.mdx",
+      "src/content/departments/physelnano-staff.mdx",
+      "src/content/departments/sacm-staff.mdx",
+      "src/content/departments/teleit-staff.mdx",
+      "src/content/departments/phaerotech-staff.mdx"
+    ]
+    requires = [PersonCardComponent]
+
+    description = """
+    Переформатировать все *-staff.mdx файлы кафедр.
+
+    ТЕКУЩИЙ ФОРМАТ (ics-staff.mdx пример):
+      #### Семенович Сергей Николаевич
+      *заведующий кафедрой, кандидат техн. наук*
+      Тел: +375 (17) 209-58-80 | [semenovich@bsu.by](mailto:semenovich@bsu.by) | [Google Scholar](...)
+      ---
+
+    ПРОБЛЕМЫ:
+      - #### (h4) в prose-sm практически неотличим от body text
+      - *italic* не разделяет role и degree
+      - Горизонтальный разделитель --- избыточен если PersonCard рисует border-b
+
+    НОВЫЙ ФОРМАТ — <PersonCard />:
+      <PersonCard
+        name="Семенович Сергей Николаевич"
+        role="заведующий кафедрой"
+        degree="кандидат техн. наук"
+        phone="+375 (17) 209-58-80"
+        email="semenovich@bsu.by"
+        scholar="https://scholar.google.com/citations?..."
+      />
+
+    ПРАВИЛА РАЗБИВКИ role/degree из italic:
+      - "заведующий кафедрой, кандидат техн. наук"
+        → role="заведующий кафедрой" degree="кандидат техн. наук"
+      - "доктор техн. наук, профессор, профессор"
+        → degree="доктор техн. наук, профессор" (убрать дублирующее "профессор")
+      - "доцент, кандидат техн. наук, доцент"
+        → role="доцент" degree="кандидат техн. наук"
+      - "старший преподаватель"
+        → role="старший преподаватель" (без degree)
+
+    EMAIL:
+      - [semenovich@bsu.by](mailto:semenovich@bsu.by) → email="semenovich@bsu.by"
+      - НЕ передавать полную mailto: строку в prop email
+
+    SCOPUS:
+      - [Scopus](https://www.scopus.com/authid/detail.uri?authorId=...) → scopus="https://..."
+
+    GOOGLE SCHOLAR:
+      - [Google Scholar](https://scholar.google.com/...) → scholar="https://..."
+
+    УДАЛИТЬ:
+      - Строки с --- (разделители)
+      - Префикс "Тел: " — оставить только номер в phone prop
+
+    НЕ трогать frontmatter (--- title: ... ---)
+    НЕ менять порядок персон
+    """
+
+    invariants:
+      invariant = "Ни одна персона, ни одна контактная деталь не потеряна"
+      invariant = "Порядок персон сохранён (зав. кафедрой первый)"
+      invariant = "Email передаётся только как адрес, без mailto: префикса"
+      invariant = "Символы #### и --- удалены"
+      invariant = "Дублирующиеся звания убраны (профессор, профессор → профессор)"
+
+    acceptance:
+      test = "Все преподаватели ICS-кафедры рендерятся как PersonCard"
+      test = "Отсутствие двойных mailto:mailto: в ссылках"
+      test = "Файлы проходят парсинг gray-matter без ошибок"
+      test = "В MDX нет строк начинающихся с ####"
+
+    artifacts = [
+      "src/content/departments/ics-staff.mdx",
+      "src/content/departments/kis-staff.mdx",
+      "src/content/departments/rdmt-staff.mdx",
+      "src/content/departments/qro-staff.mdx",
+      "src/content/departments/physelnano-staff.mdx",
+      "src/content/departments/sacm-staff.mdx",
+      "src/content/departments/teleit-staff.mdx",
+      "src/content/departments/phaerotech-staff.mdx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 7: Исправление описаний кафедр (*-dept.mdx)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module DeptOverviewMDXFix:
+    owns = [
+      "src/content/departments/ics.mdx",
+      "src/content/departments/kis.mdx",
+      "src/content/departments/rdmt.mdx",
+      "src/content/departments/qro.mdx",
+      "src/content/departments/physelnano.mdx",
+      "src/content/departments/sacm.mdx",
+      "src/content/departments/teleit.mdx",
+      "src/content/departments/phaerotech.mdx"
+    ]
+
+    description = """
+    Переформатировать MDX описания кафедр.
+
+    ТЕКУЩАЯ ПРОБЛЕМА (ics.mdx как образец):
+      - Разделы обозначены через **Жирный текст** — это НЕ заголовки
+      - **Кафедра осуществляет подготовку...** теряется в потоке текста
+      - Историческая справка (первый абзац) не выделена визуально
+      - "Разработан ряд систем..." перечислен отдельными абзацами, не списком
+
+    ТАБЛИЦА ЗАМЕНЫ **Bold** → ## / ###:
+      **Коллектив кафедры** (цифры в тексте) → оставить как есть внутри абзаца
+      **Кафедра осуществляет подготовку специалистов по специальностям:** → ## Специальности
+      **и специализациям:** → удалить заголовок, добавить подзаголовок ### Специализации
+      **Общие курсы**, обеспечиваемые... → ### Учебные дисциплины
+      **Преподаватели кафедры читают спецкурсы:** → #### Спецкурсы
+      **Курсы магистратуры**, обеспечиваемые... → #### Магистратура
+      **Направление научных исследований:** → ## Научные исследования
+      **Научные лаборатории кафедры:** → ### Лаборатории
+      **Наши научные достижения:** → ### Достижения
+      **Сотрудничество:** → ### Сотрудничество
+
+    ИСТОРИЧЕСКАЯ СПРАВКА:
+      Первый абзац с историей основания кафедры (год основания, кто заведовал, переименования)
+      → обернуть в blockquote:
+        > Создана в 1963 году как кафедра...
+
+    ДОСТИЖЕНИЯ (длинные абзацы):
+      "Создано более 50 типов измерительных систем..."
+      "В 2018 году подготовлен и запущен наноспутник..."
+      "Разработан ряд систем мониторинга..."
+      → Преобразовать в нумерованный или маркированный список если это разные достижения
+
+    НЕ ТРОГАТЬ:
+      - Frontmatter (title)
+      - Ссылки на внешние ресурсы
+      - Конкретные списки дисциплин (уже в виде - списков)
+      - Числовые данные (38 человек, 1 доктор, 3 кандидата)
+    """
+
+    invariants:
+      invariant = "Весь контент сохранён без потери данных"
+      invariant = "Иерархия: ## для разделов верхнего уровня, ### для подразделов, #### для подподразделов"
+      invariant = "НЕ добавлять ## перед первым абзацем (введение — без заголовка)"
+      invariant = "Blockquote только для исторической справки — не для всего текста"
+      invariant = "Списки дисциплин остаются списками"
+
+    acceptance:
+      test = "Страница /faculty/departments/ics показывает чёткие разделы с заголовками"
+      test = "Историческая справка визуально выделена blockquote"
+      test = "Нет строк начинающихся с **<заголовок>**:"
+      test = "gray-matter парсит файлы без ошибок"
+
+    artifacts = [
+      "src/content/departments/ics.mdx",
+      "src/content/departments/kis.mdx",
+      "src/content/departments/rdmt.mdx",
+      "src/content/departments/qro.mdx",
+      "src/content/departments/physelnano.mdx",
+      "src/content/departments/sacm.mdx",
+      "src/content/departments/teleit.mdx",
+      "src/content/departments/phaerotech.mdx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 8: Исправление ics-science.mdx и *-science.mdx
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module ScienceMDXFix:
+    owns = [
+      "src/content/departments/ics-science.mdx",
+      "src/content/departments/kis-science.mdx",
+      "src/content/departments/rdmt-science.mdx",
+      "src/content/departments/qro-science.mdx",
+      "src/content/departments/physelnano-science.mdx",
+      "src/content/departments/sacm-science.mdx",
+      "src/content/departments/teleit-science.mdx",
+      "src/content/departments/phaerotech-science.mdx"
+    ]
+
+    description = """
+    На примере ics-science.mdx:
+
+    ТЕКУЩЕЕ:
+      **Наука и лаборатории**          ← псевдо-заголовок
+      Направления научной работы:...   ← текст
+      **Научные лаборатории кафедры:** ← псевдо-заголовок
+      НИЛ информационно-измерительных систем (создана в 2001 г.);   ← не список
+      СНИЛ робототехники и встраиваемых систем (создана в 2018 г.). ← не список
+      **Основные научные разработки кафедры:**  ← псевдо-заголовок
+      1.  Разработка 1...    (пустые строки между пунктами)
+      2.  Разработка 2...
+      **Многофункциональный измерительный комплекс УНИПРО**  ← псевдо-заголовок
+
+    НУЖНО:
+      ## Научные лаборатории
+      - НИЛ информационно-измерительных систем (создана в 2001 г.)
+      - СНИЛ робототехники и встраиваемых систем (создана в 2018 г.)
+
+      ## Основные научные разработки
+      1. Разработка 1...
+      2. Разработка 2...
+
+      ### Многофункциональный измерительный комплекс УНИПРО
+      Текст описания...
+
+    ПРАВИЛА:
+      - **Жирный** в начале строки как заголовок → ## или ### в зависимости от уровня
+      - Перечисления через ; в одну строку → разбить на список -
+      - Убрать пустые строки между нумерованными пунктами (кроме разделения секций)
+    """
+
+    invariants:
+      invariant = "Все научные разработки и их описания сохранены"
+      invariant = "Нумерация разработок сохранена"
+      invariant = "Нет псевдо-заголовков через **bold**"
+
+    acceptance:
+      test = "ics-science.mdx содержит ## заголовки вместо **bold** псевдо-заголовков"
+      test = "Лаборатории оформлены как список"
+
+    artifacts = [
+      "src/content/departments/ics-science.mdx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 9: Исправление PDF-переносов и форматирования в competencies / scientific-directions
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module ScientificContentFix:
+    owns = [
+      "src/content/departments/ics-competencies.mdx",
+      "src/content/departments/ics-scientific-directions.mdx",
+      "src/content/departments/kis-scientific-directions.mdx",
+      "src/content/departments/rdmt-scientific-directions.mdx",
+      "src/content/departments/qro-scientific-directions.mdx",
+      "src/content/departments/physelnano-scientific-directions.mdx",
+      "src/content/departments/sacm-scientific-directions.mdx",
+      "src/content/departments/teleit-scientific-directions.mdx",
+      "src/content/departments/phaerotech-scientific-directions.mdx"
+    ]
+
+    description = """
+    1. УСТРАНИТЬ PDF-ПЕРЕНОСЫ (мягкий дефис из PDF-экспорта):
+       Слова разрезанные дефисом НЕ по правилу составных слов:
+         измери-тельных → измерительных
+         питаю-щих → питающих
+         питаю-щие → питающие
+         разра-ботка → разработка
+         со-вместно → совместно
+         тер-машко → Терешко (проверять по контексту)
+         про-граммного → программного
+         аппаратно-программных → оставить (настоящий дефис составного слова)
+         программно-аппаратных → оставить
+         научно-технической → оставить
+       Паттерн для поиска: слово-слогчасть (дефис внутри слова после 2-4 буквы)
+
+    2. ССЫЛКИ НА СТАРЫЙ САЙТ:
+       https://rct.bsu.by/faculty/departments/ics/staff/semenovichSN
+       и подобные → заменить на plain text "Семенович С.Н."
+       (старый сайт rct.bsu.by больше не является каноническим URL)
+
+    3. ИНСТРУМЕНТЫ — ДЛИННЫЕ СТРОКИ В СПИСКАХ (ics-competencies.mdx):
+       Текущее:
+         - ARM Keil Atmel Studio CubeMX Arduino IDE, Visual Code ThonnyIDE SEGGER's Embedded Studio Espressif-IDE
+
+       Разбить на отдельные пункты по инструменту/платформе:
+         - ARM Keil, Atmel Studio, CubeMX, Arduino IDE (микроконтроллеры / uC)
+         - Visual Code, Thonny IDE, SEGGER Embedded Studio, Espressif-IDE
+
+    4. TOC-СПИСОК В НАЧАЛЕ:
+       Текущий список якорных ссылок (оглавление) в начале ics-competencies.mdx и ics-scientific-directions.mdx
+       Добавить над ним строку: **Разделы:**
+       Убрать дефисные переносы в текстах ссылок:
+         "измери-тельных" в тексте ссылки → "измерительных"
+
+    5. ПУБЛИКАЦИИ — нумерованные списки:
+       Оставить нумерацию. Убрать лишние пробелы перед пунктами.
+       Если ссылка вида [ссылка.url] содержит экранирование \[ → убрать обратный слэш.
+    """
+
+    invariants:
+      invariant = "Все научные направления и их описания сохранены в полном объёме"
+      invariant = "Все публикации сохранены (авторы, название, журнал, год)"
+      invariant = "Якоря для TOC-ссылок совпадают с id заголовков ### (текст заголовка = текст ссылки)"
+      invariant = "Настоящие дефисные слова (научно-технической, программно-аппаратных) — не трогать"
+
+    acceptance:
+      test = "В ics-competencies.mdx нет паттерна '[а-яё]{2,4}-[а-яё]{2,}' в середине слова"
+      test = "TOC-ссылки работают (якоря совпадают с заголовками ###)"
+      test = "Список инструментов ARM/Keil/... разбит на читаемые пункты"
+      test = "Нет ссылок на rct.bsu.by/faculty/departments/ics/staff/..."
+
+    artifacts = [
+      "src/content/departments/ics-competencies.mdx",
+      "src/content/departments/ics-scientific-directions.mdx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MODULE 10: Улучшение prose-стилей в страницах факультета
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  module ProseStylesFix:
+    owns = [
+      "src/app/faculty/departments/[slug]/page.tsx",
+      "src/app/faculty/administration/page.tsx",
+      "src/app/faculty/staff/page.tsx"
+    ]
+
+    description = """
+    Добавить явные prose-классы для h2, h3, blockquote в страницы факультета.
+
+    ТЕКУЩИЙ prose-класс в [slug]/page.tsx (строка 205):
+      className="prose prose-invert prose-sm max-w-none
+        prose-headings:font-display prose-headings:text-text-primary
+        prose-a:text-accent prose-strong:text-text-primary
+        prose-p:text-text-secondary prose-li:text-text-secondary"
+
+    ДОБАВИТЬ (в конец className, не заменять существующие):
+      prose-h2:text-xl prose-h2:font-display prose-h2:border-b
+      prose-h2:border-[#2C2C2E] prose-h2:pb-2 prose-h2:mt-8
+      prose-h3:text-base prose-h3:font-display prose-h3:text-white prose-h3:mt-6
+      prose-h4:text-sm prose-h4:font-display prose-h4:text-[#8A8A8E] prose-h4:uppercase
+      prose-h4:tracking-widest prose-h4:mt-4
+      prose-blockquote:border-l-[#1A56DB] prose-blockquote:text-[#8A8A8E]
+      prose-blockquote:not-italic prose-blockquote:pl-4
+
+    В administration/page.tsx (строка 76):
+      className="prose prose-invert max-w-none font-body"
+      → ДОБАВИТЬ те же классы для h2/h3/h4/blockquote
+
+    Применять ТОЛЬКО к существующим prose-контейнерам,
+    НЕ добавлять новые <div className="prose"> блоки.
+    """
+
+    invariants:
+      invariant = "Изменяется только className строка prose-контейнера"
+      invariant = "Остальная логика страниц (metadata, tabs, breadcrumbs) не трогается"
+      invariant = "Tailwind className строки не должны превышать разумную длину — при необходимости использовать cn() утилиту из @/lib/utils если она существует"
+
+    acceptance:
+      test = "h2 в MDX визуально выделены (крупнее, с нижней границей)"
+      test = "h3 отличаются от body text"
+      test = "h4 отображаются как small uppercase label"
+      test = "blockquote отображается с синей левой полосой"
+      test = "Страницы компилируются без TypeScript ошибок"
+
+    artifacts = [
+      "src/app/faculty/departments/[slug]/page.tsx",
+      "src/app/faculty/administration/page.tsx",
+      "src/app/faculty/staff/page.tsx"
+    ]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PIPELINE
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  pipeline "ContentFormattingFix":
+
+    step S1_PersonCard:
+      modules = ["PersonCardComponent"]
+      output = code
+      require = "Создать src/components/ui/PersonCard.tsx — Server Component с аватаром и опциональным фото"
+      gate = "Файл создан, TypeScript ошибок нет, компилируется"
+
+    step S2_DeanPhoto:
+      modules = ["DeanPhotoFix"]
+      output = code
+      require = "Заменить placeholder 'ДУ' на <img src='/images/dean_ushakov.svg'> в administration/page.tsx"
+      gate = "Страница /faculty/administration показывает фото декана"
+      depends_on = ["S1_PersonCard"]
+
+    step S3_RegisterMDXComponents:
+      modules = ["MDXComponentsRegistry"]
+      output = code
+      require = "Обновить MDXRemote в dept [slug]/page.tsx и staff/page.tsx передать components={{ PersonCard }}"
+      gate = "Страницы компилируются, <PersonCard /> в MDX работает"
+      depends_on = ["S1_PersonCard"]
+
+    step S4_FixAdminMDX:
+      modules = ["AdminMDXFix", "StaffGlobalMDXFix"]
+      output = code
+      require = "Переписать faculty_administration.mdx и faculty_staff.mdx — убрать артефакты парсинга, конвертировать в <PersonCard />"
+      gate = "MDX файлы парсируются без ошибок, все персоны отображаются"
+      depends_on = ["S2_DeanPhoto", "S3_RegisterMDXComponents"]
+
+    step S5_FixDeptStaff:
+      modules = ["DeptStaffMDXFix"]
+      output = code
+      require = "Конвертировать все 8 файлов *-staff.mdx кафедр из ####/italic в <PersonCard />"
+      gate = "Все 8 кафедр /faculty/departments/[slug] показывают вкладку Преподаватели без ошибок"
+      depends_on = ["S3_RegisterMDXComponents"]
+
+    step S6_FixDeptOverview:
+      modules = ["DeptOverviewMDXFix", "ScienceMDXFix"]
+      output = code
+      require = "Заменить **bold** псевдо-заголовки на ## / ### в описаниях кафедр и science-разделах"
+      gate = "Описания кафедр содержат реальные заголовки, isторическая справка в blockquote"
+      depends_on = ["S3_RegisterMDXComponents"]
+
+    step S7_FixScientificContent:
+      modules = ["ScientificContentFix"]
+      output = code
+      require = "Убрать PDF-переносы, исправить ссылки на rct.bsu.by, разбить длинные строки инструментов"
+      gate = "ics-competencies.mdx и ics-scientific-directions.mdx не содержат PDF-переносов"
+      depends_on = ["S6_FixDeptOverview"]
+
+    step S8_ProseStyles:
+      modules = ["ProseStylesFix"]
+      output = code
+      require = "Добавить prose-h2/h3/h4/blockquote классы в страницы факультета"
+      gate = "h2/h3 визуально различимы, blockquote стилизован, TypeScript ошибок нет"
+      depends_on = ["S4_FixAdminMDX", "S5_FixDeptStaff", "S6_FixDeptOverview"]
+
+    step S9_VerifyBuild:
+      output = diff
+      require = "Запустить: pnpm build (или npx next build). Убедиться что сборка завершается успешно."
+      gate = "next build проходит без ошибок TypeScript и без 404 на изображения"
+      depends_on = ["S7_FixScientificContent", "S8_ProseStyles"]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # POLICY
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  policy ContentIntegrity:
+    rule = "Ни один текст, данные персоны, контактная информация или публикация не теряется"
+    severity = "critical"
+    rule = "Ссылки на внешние ресурсы (Scopus, Google Scholar) сохранены и корректны"
+    severity = "high"
+    rule = "Ссылки на внутренние страницы (/faculty/..., /programs/...) сохранены"
+    severity = "high"
+
+  policy NoBreakingChanges:
+    rule = "Не изменять next.config.js, tailwind.config.ts, tsconfig.json"
+    severity = "critical"
+    rule = "Не изменять Header.tsx, Footer.tsx и другие layout-компоненты"
+    severity = "critical"
+    rule = "Не добавлять новые npm-зависимости"
+    severity = "high"
+    rule = "Не изменять маршруты (app/ структуру)"
+    severity = "critical"
+
+  policy CodeQuality:
+    rule = "TypeScript строгий режим — нет any без причины, нет ts-ignore"
+    severity = "high"
+    rule = "Все новые компоненты — Server Components (без 'use client') если не требуется интерактивность"
+    severity = "medium"
+    rule = "Использовать только дизайн-токены из tailwind.config.ts"
+    severity = "medium"
