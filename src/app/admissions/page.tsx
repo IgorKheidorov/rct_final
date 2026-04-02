@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
+
 export const metadata: Metadata = {
   title: 'Абитуриентам — ФРКТ БГУ',
   description:
@@ -64,22 +67,59 @@ const INTERNATIONAL_PARTNERS = {
   'Россия': ['Ведущие российские университеты'],
 }
 
+const ADMISSIONS_HUB = [
+  {
+    id: 'places',
+    title: 'Плановый набор',
+    description: 'Бюджетные и платные места по специальностям бакалавриата и магистратуры.',
+  },
+  {
+    id: 'requirements',
+    title: 'Вступительные испытания',
+    description: 'Перечень вступительных испытаний и особенности приёма.',
+  },
+  {
+    id: 'targeted',
+    title: 'Целевой приём',
+    description: 'Информация для абитуриентов с целевым направлением.',
+  },
+  {
+    id: 'documents',
+    title: 'Документы',
+    description: 'Правила приёма, порядок подачи документов и льготы.',
+  },
+  {
+    id: 'open-days',
+    title: 'Дни открытых дверей',
+    description: 'Даты и формат мероприятий для будущих студентов.',
+  },
+  {
+    id: 'dormitory',
+    title: 'Общежитие',
+    description: 'Условия предоставления места в общежитии БГУ.',
+  },
+  {
+    id: 'international',
+    title: 'Международный приём',
+    description: 'Партнёрские программы и обучение для иностранных граждан.',
+  },
+  {
+    id: 'military',
+    title: 'Военная кафедра',
+    description: 'Военно-учётная специальность и военная подготовка.',
+  },
+] as const
+
 export default function AdmissionsPage() {
   return (
     <div data-pagefind-body>
-      {/* Header */}
-      <section className="bg-bg-primary pt-32 pb-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-6">
-          // АБИТУРИЕНТАМ
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl text-text-primary leading-[0.97] tracking-tight mb-4">
-          ПОСТУПЛЕНИЕ 2026
-        </h1>
-        <p className="font-body text-base text-text-secondary leading-[1.75] max-w-xl">
-          Факультет радиофизики и компьютерных технологий — единственный физико-технический
-          факультет в Республике Беларусь
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Абитуриентам"
+        title="Поступление 2026"
+        subtitle="Факультет радиофизики и компьютерных технологий — единственный физико-технический факультет в Республике Беларусь"
+      />
+
+      <PageHub items={ADMISSIONS_HUB} />
 
       {/* Dean welcome */}
       <section className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
 import SectionLabel from '@/components/ui/SectionLabel'
 
 export const metadata: Metadata = {
@@ -16,20 +18,37 @@ const SOCIAL = [
   { platform: 'TikTok', url: 'https://www.tiktok.com/@rfiktss', icon: 'TT' },
 ]
 
+const CONTACTS_HUB = [
+  {
+    id: 'contact-info',
+    title: 'Контакты',
+    description: 'Адрес, телефон, email факультета и приёмная декана.',
+  },
+  {
+    id: 'directions',
+    title: 'Как добраться',
+    description: 'Транспорт, карта и ориентиры до корпуса на Курчатова, 5.',
+  },
+  {
+    id: 'social',
+    title: 'Соцсети',
+    description: 'Официальные страницы ФРКТ в социальных сетях.',
+  },
+] as const
+
 export default function ContactsPage() {
   return (
     <div className="min-h-screen bg-bg-primary" data-pagefind-body>
-      {/* Hero */}
-      <section className="bg-bg-section border-b border-border-col py-16 px-6 md:px-20">
-        <SectionLabel>// КОНТАКТЫ</SectionLabel>
-        <h1 className="font-display text-4xl md:text-5xl text-text-primary mt-4">
-          Свяжитесь с нами
-        </h1>
-      </section>
+      <PageHero
+        eyebrow="Контакты"
+        title="Свяжитесь с нами"
+        subtitle="Адрес, телефоны, email и как добраться до факультета."
+      />
 
-      <div className="px-6 md:px-20 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Main contacts */}
-        <div>
+      <PageHub items={CONTACTS_HUB} />
+
+      <div className="px-6 md:px-20 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 border-t border-border-col">
+        <div id="contact-info">
           <h2 className="font-display text-2xl text-text-primary mb-6">Факультет ФРКТ БГУ</h2>
 
           <div className="space-y-4">

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
+
 export const metadata: Metadata = {
   title: 'Обучение — ФРКТ БГУ',
   description:
@@ -128,36 +131,13 @@ const RESOURCES = [
 export default function EducationPage() {
   return (
     <div data-pagefind-body>
-      <section className="bg-gradient-to-b from-slate-50 to-bg-primary pt-32 pb-12 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="section-label mb-6 leading-none">Обучение</p>
-        <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-heading leading-[1.05] tracking-tight mb-4 max-w-2xl">
-          Учебный процесс
-        </h1>
-        <p className="font-body text-base text-text-secondary leading-relaxed max-w-xl">
-          Расписание, сессии, учебный календарь и методические материалы
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Обучение"
+        title="Учебный процесс"
+        subtitle="Расписание, сессии, учебный календарь и методические материалы"
+      />
 
-      <section
-        className="bg-bg-section py-12 px-6 sm:px-10 lg:px-20 border-b border-border-col"
-        aria-label="Разделы страницы"
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {EDU_HUB.map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              className="group flex flex-col rounded-card border border-border-col bg-white p-6 shadow-sm transition-all hover:border-accent/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              <h2 className="font-display font-semibold text-lg text-heading mb-2">{item.title}</h2>
-              <p className="font-body text-sm text-text-secondary leading-relaxed mb-4 flex-1">
-                {item.description}
-              </p>
-              <span className="font-body text-sm font-medium text-accent">Перейти →</span>
-            </a>
-          ))}
-        </div>
-      </section>
+      <PageHub items={EDU_HUB} />
 
       <section
         id="schedules"

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
+
 export const metadata: Metadata = {
   title: 'Наука — ФРКТ БГУ',
   description:
@@ -49,24 +52,34 @@ const SCHOOLS = [
   },
 ]
 
+const SCIENCE_HUB = [
+  {
+    id: 'conferences',
+    title: 'Конференции',
+    description: 'Международные научно-технические конференции факультета.',
+  },
+  {
+    id: 'labs',
+    title: 'Лаборатории',
+    description: 'Научно-исследовательские лаборатории и направления работ.',
+  },
+  {
+    id: 'schools',
+    title: 'Научные школы',
+    description: 'Ведущие школы и тематические направления.',
+  },
+] as const
+
 export default function SciencePage() {
   return (
     <div data-pagefind-body>
-      {/* Hero */}
-      <section className="bg-bg-primary pt-32 pb-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-6">
-          // НАУКА И ИССЛЕДОВАНИЯ
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl text-text-primary leading-[0.97] tracking-tight mb-4">
-          НАУЧНАЯ ДЕЯТЕЛЬНОСТЬ
-          <br />
-          ФРКТ
-        </h1>
-        <p className="font-body text-base text-text-secondary leading-[1.75] max-w-xl">
-          Фундаментальные и прикладные исследования, международные конференции, 7 научных
-          лабораторий, 2 ведущие научные школы
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Наука и исследования"
+        title="Научная деятельность ФРКТ"
+        subtitle="Фундаментальные и прикладные исследования, международные конференции, 7 научных лабораторий, 2 ведущие научные школы"
+      />
+
+      <PageHub items={SCIENCE_HUB} />
 
       {/* Conferences */}
       <section

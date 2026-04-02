@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
 import StatsBand from '@/components/sections/StatsBand'
 
 export const metadata: Metadata = {
@@ -98,34 +99,51 @@ const RESOURCES = [
   { label: 'Распределение 2025', href: '/faculty#distribution' },
 ]
 
+const FACULTY_HUB = [
+  {
+    id: 'about',
+    title: 'О нас',
+    description: 'Миссия факультета, ключевые факты и уникальность подготовки.',
+  },
+  {
+    id: 'history',
+    title: 'История и достижения',
+    description: 'Хронология и важные достижения в науке и образовании.',
+  },
+  {
+    id: 'research',
+    title: 'Исследования',
+    description: 'Направления научной работы и прикладные компетенции.',
+  },
+  {
+    id: 'departments',
+    title: 'Кафедры',
+    description: 'Восемь кафедр: структура и специализации.',
+  },
+  {
+    id: 'resources',
+    title: 'Ресурсы',
+    description: 'Сотрудники, руководство, документы и полезные ссылки.',
+  },
+] as const
+
 export default function FacultyPage() {
   return (
     <div data-pagefind-body>
-      {/* Hero */}
-      <section className="relative h-[480px] md:h-[600px] overflow-hidden">
-        <Image
-          src="/images/faculty_building.jpg"
-          alt="Корпус ФРКТ БГУ, ул. Академика Курчатова, 5"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-bg-primary/70" />
-        <div className="absolute inset-0 flex flex-col justify-end px-6 sm:px-10 lg:px-20 pb-16">
-          <p className="font-body text-[11px] text-accent uppercase tracking-label mb-4">
-            // ФАКУЛЬТЕТ РАДИОФИЗИКИ И КОМПЬЮТЕРНЫХ ТЕХНОЛОГИЙ
-          </p>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl text-text-primary leading-[0.97] tracking-tight max-w-3xl">
-            О ФАКУЛЬТЕТЕ
-          </h1>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Факультет радиофизики и компьютерных технологий"
+        title="О факультете"
+        subtitle="Единственный физико-технический факультет в Республике Беларусь: кафедры, история, научные направления и ресурсы."
+      />
 
-      {/* Stats */}
+      <PageHub items={FACULTY_HUB} />
+
       <StatsBand items={STATS} />
 
-      {/* About */}
-      <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
+      <section
+        id="about"
+        className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col"
+      >
         <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
           // О НАС
         </p>
@@ -185,8 +203,10 @@ export default function FacultyPage() {
         </div>
       </section>
 
-      {/* Research */}
-      <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
+      <section
+        id="research"
+        className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col"
+      >
         <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
           // ИССЛЕДОВАНИЯ
         </p>
@@ -206,8 +226,10 @@ export default function FacultyPage() {
         </div>
       </section>
 
-      {/* Departments */}
-      <section className="bg-bg-section py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
+      <section
+        id="departments"
+        className="bg-bg-section py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col"
+      >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
           <div>
             <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-3">
@@ -248,8 +270,7 @@ export default function FacultyPage() {
         </div>
       </section>
 
-      {/* Resources */}
-      <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20">
+      <section id="resources" className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20">
         <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
           // РЕСУРСЫ
         </p>

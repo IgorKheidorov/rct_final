@@ -8,6 +8,8 @@ export interface ProgramsGridProps {
   heading: string
   cta: { label: string; href: string }
   items: ProgramItem[]
+  /** Якорь для навигации с главной страницы «Программы» */
+  sectionId?: string
 }
 
 interface ProgramCardProps {
@@ -119,9 +121,9 @@ function ProgramCard({ item }: ProgramCardProps) {
   )
 }
 
-export function ProgramsGrid({ eyebrow, heading, cta, items }: ProgramsGridProps) {
+export function ProgramsGrid({ eyebrow, heading, cta, items, sectionId }: ProgramsGridProps) {
   return (
-    <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
+    <section id={sectionId} className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8">
         <div className="flex flex-col gap-3">

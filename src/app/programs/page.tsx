@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import type { ProgramItem } from '@/lib/types'
 import ProgramsGrid from '@/components/sections/ProgramsGrid'
+import PageHero from '@/components/layout/PageHero'
+import PageHub from '@/components/layout/PageHub'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
@@ -83,41 +85,55 @@ const MASTER_PROGRAMS: ProgramItem[] = [
   },
 ]
 
+const PROGRAMS_HUB = [
+  {
+    id: 'bachelor',
+    title: 'Бакалавриат',
+    description: 'Четыре специальности, девять направлений подготовки.',
+  },
+  {
+    id: 'master',
+    title: 'Магистратура',
+    description: 'Три специальности, обучение на русском и английском.',
+  },
+  {
+    id: 'join',
+    title: 'Поступление',
+    description: 'Правила приёма, плановый набор и документы для абитуриентов.',
+  },
+] as const
+
 export default function ProgramsPage() {
   return (
     <div data-pagefind-body>
-      {/* Header */}
-      <section className="bg-bg-primary pt-32 pb-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-6">
-          // ПРОГРАММЫ
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl text-text-primary leading-[0.97] tracking-tight mb-4">
-          ПРОГРАММЫ ОБУЧЕНИЯ
-        </h1>
-        <p className="font-body text-base text-text-secondary leading-[1.75] max-w-xl">
-          4 специальности бакалавриата, 9 направлений подготовки. 3 специальности магистратуры,
-          обучение на русском и английском языках.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Программы"
+        title="Программы обучения"
+        subtitle="4 специальности бакалавриата, 9 направлений подготовки. 3 специальности магистратуры, обучение на русском и английском языках."
+      />
 
-      {/* Bachelor */}
+      <PageHub items={PROGRAMS_HUB} />
+
       <ProgramsGrid
+        sectionId="bachelor"
         eyebrow="// БАКАЛАВРИАТ (4 специальности, 9 направлений)"
         heading="Первая ступень"
         cta={{ label: 'ПОДРОБНЕЕ →', href: '/programs/bachelor' }}
         items={BACHELOR_PROGRAMS}
       />
 
-      {/* Master */}
       <ProgramsGrid
+        sectionId="master"
         eyebrow="// МАГИСТРАТУРА (3 специальности)"
         heading="Вторая ступень"
         cta={{ label: 'ПОДРОБНЕЕ →', href: '/programs/master' }}
         items={MASTER_PROGRAMS}
       />
 
-      {/* CTA */}
-      <section className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-t border-border-col">
+      <section
+        id="join"
+        className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-t border-border-col"
+      >
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
             <p className="font-body text-sm text-text-secondary mb-2">
