@@ -2,10 +2,10 @@ import fs from 'fs'
 import path from 'path'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Metadata } from 'next'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import matter from 'gray-matter'
+import PageHero from '@/components/layout/PageHero'
 
 interface MasterProgram {
   specialty: string
@@ -73,81 +73,48 @@ export default async function MasterProgramPage({ params }: Props) {
     mdxContent = content
   }
 
-  const imageExists = fs.existsSync(path.join(process.cwd(), 'public', prog.image))
-
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary" data-pagefind-body>
-      {/* Breadcrumb */}
-      <nav className="border-b border-border-col" aria-label="Breadcrumb">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <ol className="flex items-center gap-2 text-sm text-text-secondary flex-wrap">
-            <li><Link href="/" className="hover:text-text-primary transition-colors">Главная</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li><Link href="/programs" className="hover:text-text-primary transition-colors">Программы</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li><Link href="/programs/master" className="hover:text-text-primary transition-colors">Магистратура</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li className="text-text-primary truncate max-w-xs" aria-current="page">{prog.specialty}</li>
-          </ol>
-        </div>
-      </nav>
-
-      {/* Header */}
-      <header className="border-b border-border-col bg-bg-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="grid lg:grid-cols-2 gap-10 items-start">
-            <div>
-          <p className="font-display text-accent text-xs tracking-label uppercase mb-4">
-            {'// МАГИСТРАТУРА · '}{prog.code}
-          </p>
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl text-text-primary leading-tight mb-6">
-                {prog.specialty}
-              </h1>
-
-              {prog.english && (
-                <span className="inline-block border border-accent text-accent font-display text-xs uppercase tracking-label px-3 py-1 mb-6">
-                  English track available
-                </span>
-              )}
-
-              {/* Enrollment */}
-              <div className="mt-6 border border-border-col inline-block">
-                <table className="text-sm">
-                  <thead>
-                    <tr className="border-b border-border-col">
-                      <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Форма</th>
-                      <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Бюджет</th>
-                      <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Платно</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="px-6 py-3 text-text-secondary">Дневная</td>
-                      <td className="px-6 py-3 text-text-primary font-display">{prog.budget}</td>
-                      <td className="px-6 py-3 text-text-primary font-display">{prog.paid}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {imageExists && (
-              <div className="relative aspect-video overflow-hidden border border-border-col">
-                <Image
-                  src={prog.image}
-                  alt={prog.specialty}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <PageHero
+        eyebrow={`Магистратура · ${prog.code}`}
+        title={prog.specialty}
+        subtitle={prog.english ? 'Обучение на русском и английском языках' : undefined}
+        coverImage={{ src: prog.image, alt: prog.specialty, priority: true }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 space-y-12">
+        {/* Enrollment */}
+        <section aria-label="Плановый набор">
+          <h2 className="font-display text-lg uppercase tracking-label text-text-secondary mb-6">
+            Плановый набор
+          </h2>
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="inline-block border border-border-col">
+              <table className="text-sm">
+                <thead>
+                  <tr className="border-b border-border-col">
+                    <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Форма</th>
+                    <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Бюджет</th>
+                    <th className="px-6 py-3 text-left font-display text-xs uppercase tracking-label text-text-secondary">Платно</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-6 py-3 text-text-secondary">Дневная</td>
+                    <td className="px-6 py-3 text-text-primary font-display">{prog.budget}</td>
+                    <td className="px-6 py-3 text-text-primary font-display">{prog.paid}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {prog.english && (
+              <span className="inline-block border border-accent text-accent font-display text-xs uppercase tracking-label px-3 py-2">
+                English track available
+              </span>
+            )}
+          </div>
+        </section>
+
         {mdxContent ? (
           <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary">
             <MDXRemote source={mdxContent} />

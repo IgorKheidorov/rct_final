@@ -17,90 +17,59 @@ interface ProgramCardProps {
 }
 
 function ProgramCard({ item }: ProgramCardProps) {
-  const isAccent = item.accent === true
-
   return (
     <Link
       href={item.href}
-      className={[
-        'group relative flex flex-col justify-between overflow-hidden min-h-[300px] p-8 rounded-card border border-border-col',
-        'transition-all duration-300 shadow-sm hover:shadow-md',
-        isAccent ? 'bg-accent border-accent' : 'bg-white hover:border-accent/40',
-      ].join(' ')}
+      className="group relative flex flex-col justify-between overflow-hidden min-h-[300px] p-8 rounded-card border border-white/10 shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-xl"
     >
-      {/* Background image with overlay */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={item.image}
-          alt={item.title}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className={[
-            'object-cover transition-transform duration-500 group-hover:scale-105',
-            isAccent ? 'opacity-25 mix-blend-luminosity' : 'opacity-[0.08] group-hover:opacity-[0.12]',
-          ].join(' ')}
-        />
-      </div>
+      {/* Background image */}
+      <Image
+        src={item.image}
+        alt={item.title}
+        fill
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="object-cover transition-transform duration-500 group-hover:scale-105 z-0"
+      />
+
+      {/* Gradient overlay — same pattern as PageHero */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-heading/95 via-heading/65 to-heading/20"
+      />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col gap-4 h-full">
         {/* Top meta */}
         <div className="flex items-start justify-between gap-4">
-          <span className="font-body text-[11px] font-medium tracking-wide text-text-secondary">
+          <span className="font-body text-[11px] font-medium tracking-wide text-white/60">
             {item.code}
           </span>
           {item.english && (
-            <span className="font-body text-[10px] font-medium tracking-wide px-2 py-0.5 border border-text-secondary text-text-secondary rounded-sm">
+            <span className="font-body text-[10px] font-medium tracking-wide px-2 py-0.5 border border-white/30 text-white/60 rounded-sm">
               EN
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h3
-          className={[
-            'font-display font-semibold text-xl md:text-2xl leading-tight flex-1',
-            isAccent ? 'text-white' : 'text-heading',
-          ].join(' ')}
-        >
+        <h3 className="font-display font-semibold text-xl md:text-2xl leading-tight flex-1 text-white">
           {item.title}
         </h3>
 
         {/* Bottom meta */}
         <div className="flex flex-col gap-2 mt-auto">
           {item.qualification && (
-            <p
-              className={[
-                'font-body text-xs',
-                isAccent ? 'text-white/70' : 'text-text-muted',
-              ].join(' ')}
-            >
+            <p className="font-body text-xs text-white/70">
               {item.qualification}
             </p>
           )}
-
-          <div
-            className={[
-              'flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t',
-              isAccent ? 'border-white/20' : 'border-border-col',
-            ].join(' ')}
-          >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-white/20">
             {item.tracks !== undefined && item.tracks > 0 && (
-              <span
-                className={[
-                  'font-body text-xs font-medium tracking-wide',
-                  isAccent ? 'text-white/80' : 'text-text-secondary',
-                ].join(' ')}
-              >
+              <span className="font-body text-xs font-medium tracking-wide text-white/70">
                 {item.tracks} {item.tracks === 1 ? 'трек' : 'треков'}
               </span>
             )}
-            <span
-              className={[
-                'font-body text-xs font-medium tracking-wide',
-                isAccent ? 'text-white/80' : 'text-text-secondary',
-              ].join(' ')}
-            >
+            <span className="font-body text-xs font-medium tracking-wide text-white/70">
               {item.budget} бюдж.
             </span>
           </div>
@@ -110,10 +79,7 @@ function ProgramCard({ item }: ProgramCardProps) {
       {/* Hover arrow */}
       <span
         aria-hidden="true"
-        className={[
-          'absolute top-6 right-6 text-lg transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0',
-          isAccent ? 'text-white' : 'text-accent',
-        ].join(' ')}
+        className="absolute top-6 right-6 text-lg transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 text-white"
       >
         →
       </span>

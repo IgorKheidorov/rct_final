@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import matter from 'gray-matter'
+import PageHero from '@/components/layout/PageHero'
 
 interface TrackLink {
   slug: string
@@ -17,6 +18,7 @@ interface BachelorProgram {
   qualification: string
   budget: number
   paid: number
+  image: string
   tracks: TrackLink[]
 }
 
@@ -27,6 +29,7 @@ const PROGRAMS: Record<string, BachelorProgram> = {
     qualification: 'Радиофизик. Инженер-программист',
     budget: 86,
     paid: 10,
+    image: '/images/specialty_digital_tech.jpg',
     tracks: [
       { slug: 'aero', title: 'Аэрокосмические технологии' },
       { slug: 'inform', title: 'Информатика, программируемая электроника и измерительные системы' },
@@ -41,6 +44,7 @@ const PROGRAMS: Record<string, BachelorProgram> = {
     qualification: 'Информатик. Программист',
     budget: 42,
     paid: 10,
+    image: '/images/specialty_intelligent_systems.jpg',
     tracks: [
       { slug: 'ics', title: 'Интеллектуальные и киберфизические системы' },
       { slug: 'bd', title: 'Анализ больших данных и биоинформатика' },
@@ -52,6 +56,7 @@ const PROGRAMS: Record<string, BachelorProgram> = {
     qualification: 'Специалист по защите информации',
     budget: 42,
     paid: 10,
+    image: '/images/specialty_cybersecurity.jpg',
     tracks: [
       { slug: 'cs', title: 'Безопасность компьютерных технологий и систем' },
     ],
@@ -62,6 +67,7 @@ const PROGRAMS: Record<string, BachelorProgram> = {
     qualification: 'Радиофизик. Инженер-программист',
     budget: 22,
     paid: 2,
+    image: '/images/specialty_intelligent_electronics.jpg',
     tracks: [
       { slug: 'ie', title: 'Цифровые интеллектуальные системы' },
     ],
@@ -100,34 +106,20 @@ export default async function BachelorProgramPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary" data-pagefind-body>
-      {/* Breadcrumb */}
-      <nav className="border-b border-border-col" aria-label="Breadcrumb">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <ol className="flex items-center gap-2 text-sm text-text-secondary flex-wrap">
-            <li><Link href="/" className="hover:text-text-primary transition-colors">Главная</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li><Link href="/programs" className="hover:text-text-primary transition-colors">Программы</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li><Link href="/programs/bachelor" className="hover:text-text-primary transition-colors">Бакалавриат</Link></li>
-            <li aria-hidden="true" className="text-border-col">/</li>
-            <li className="text-text-primary truncate max-w-xs" aria-current="page">{prog.specialty}</li>
-          </ol>
-        </div>
-      </nav>
+      <PageHero
+        eyebrow={`Бакалавриат · ${prog.code}`}
+        title={prog.specialty}
+        subtitle={prog.qualification}
+        coverImage={{ src: prog.image, alt: prog.specialty, priority: true }}
+      />
 
-      {/* Header */}
-      <header className="border-b border-border-col bg-bg-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <p className="font-display text-accent text-xs tracking-label uppercase mb-4">
-            {'// БАКАЛАВРИАТ · '}{prog.code}
-          </p>
-          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl text-text-primary leading-tight mb-4 max-w-3xl">
-            {prog.specialty}
-          </h1>
-          <p className="text-text-secondary text-base mt-2">{prog.qualification}</p>
-
-          {/* Enrollment table */}
-          <div className="mt-8 inline-block border border-border-col">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 space-y-16">
+        {/* Enrollment table */}
+        <section aria-label="Плановый набор">
+          <h2 className="font-display text-lg uppercase tracking-label text-text-secondary mb-6">
+            Плановый набор
+          </h2>
+          <div className="inline-block border border-border-col">
             <table className="text-sm">
               <thead>
                 <tr className="border-b border-border-col">
@@ -145,10 +137,7 @@ export default async function BachelorProgramPage({ params }: Props) {
               </tbody>
             </table>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 space-y-16">
+        </section>
         {/* Tracks grid */}
         <section aria-labelledby="tracks-heading">
           <h2 id="tracks-heading" className="font-display text-lg uppercase tracking-label text-text-secondary mb-6">

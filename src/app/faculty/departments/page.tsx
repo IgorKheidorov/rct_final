@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PageHero from '@/components/layout/PageHero'
 
 export const metadata: Metadata = {
   title: 'Кафедры — ФРКТ БГУ',
@@ -68,18 +69,16 @@ const DEPARTMENTS = [
 export default function DepartmentsPage() {
   return (
     <div data-pagefind-body>
-      {/* Header */}
-      <section className="bg-bg-primary pt-32 pb-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-6">
-          // КАФЕДРЫ
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl text-text-primary leading-[0.97] tracking-tight mb-4">
-          АКАДЕМИЧЕСКИЙ СОСТАВ
-        </h1>
-        <p className="font-body text-base text-text-secondary leading-[1.75] max-w-xl">
-          8 кафедр объединяют более 100 преподавателей, исследователей и инженеров
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Факультет"
+        title="Кафедры"
+        subtitle="8 кафедр объединяют более 100 преподавателей, исследователей и инженеров."
+        coverImage={{
+          src: '/images/faculty_building.jpg',
+          alt: 'Корпус факультета радиофизики и компьютерных технологий БГУ',
+          priority: true,
+        }}
+      />
 
       {/* Departments list */}
       <section className="bg-bg-primary py-16 px-6 sm:px-10 lg:px-20">

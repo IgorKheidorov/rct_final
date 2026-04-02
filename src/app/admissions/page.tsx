@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 
 import PageHero from '@/components/layout/PageHero'
@@ -129,8 +130,14 @@ export default function AdmissionsPage() {
       {/* Dean welcome */}
       <section className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
         <div className="flex flex-col sm:flex-row gap-10 items-start max-w-4xl">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-bg-primary border border-border-col flex items-center justify-center flex-shrink-0">
-            <span className="font-display text-2xl text-text-muted">ДУ</span>
+          <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-full border border-border-col">
+            <Image
+              src="/images/staff/photo_5253703610099941488_y_06ae2a6ba4.jpg"
+              alt="Ушаков Дмитрий Владимирович"
+              fill
+              className="object-cover"
+              sizes="128px"
+            />
           </div>
           <div>
             <blockquote className="font-body text-base md:text-lg text-text-secondary leading-[1.75] italic mb-6 border-l-2 border-accent pl-6">
