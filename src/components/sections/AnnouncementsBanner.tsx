@@ -26,7 +26,7 @@ export function AnnouncementsBanner({ items }: AnnouncementsBannerProps) {
               )}
               <Link
                 href={item.href}
-                className="group flex items-center gap-2 font-body text-sm text-text-secondary hover:text-text-primary transition-colors duration-200 whitespace-nowrap py-0.5"
+                className="group flex items-center gap-2 font-body text-sm text-text-secondary hover:text-accent transition-colors duration-200 whitespace-nowrap py-0.5"
               >
                 <span
                   aria-hidden="true"

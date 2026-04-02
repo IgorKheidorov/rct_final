@@ -21,9 +21,9 @@ function ProgramCard({ item }: ProgramCardProps) {
     <Link
       href={item.href}
       className={[
-        'group relative flex flex-col justify-between overflow-hidden min-h-[320px] p-8',
-        'transition-all duration-300',
-        isAccent ? 'bg-accent' : 'bg-bg-primary hover:bg-bg-section',
+        'group relative flex flex-col justify-between overflow-hidden min-h-[300px] p-8 rounded-card border border-border-col',
+        'transition-all duration-300 shadow-sm hover:shadow-md',
+        isAccent ? 'bg-accent border-accent' : 'bg-white hover:border-accent/40',
       ].join(' ')}
     >
       {/* Background image with overlay */}
@@ -35,7 +35,7 @@ function ProgramCard({ item }: ProgramCardProps) {
           sizes="(max-width: 768px) 100vw, 50vw"
           className={[
             'object-cover transition-transform duration-500 group-hover:scale-105',
-            isAccent ? 'opacity-20 mix-blend-luminosity' : 'opacity-10 group-hover:opacity-15',
+            isAccent ? 'opacity-25 mix-blend-luminosity' : 'opacity-[0.08] group-hover:opacity-[0.12]',
           ].join(' ')}
         />
       </div>
@@ -44,11 +44,11 @@ function ProgramCard({ item }: ProgramCardProps) {
       <div className="relative z-10 flex flex-col gap-4 h-full">
         {/* Top meta */}
         <div className="flex items-start justify-between gap-4">
-          <span className="font-body text-[11px] uppercase tracking-label text-text-secondary">
+          <span className="font-body text-[11px] font-medium tracking-wide text-text-secondary">
             {item.code}
           </span>
           {item.english && (
-            <span className="font-body text-[10px] uppercase tracking-label px-2 py-0.5 border border-text-secondary text-text-secondary">
+            <span className="font-body text-[10px] font-medium tracking-wide px-2 py-0.5 border border-text-secondary text-text-secondary rounded-sm">
               EN
             </span>
           )}
@@ -57,8 +57,8 @@ function ProgramCard({ item }: ProgramCardProps) {
         {/* Title */}
         <h3
           className={[
-            'font-display text-xl md:text-2xl leading-tight flex-1',
-            isAccent ? 'text-white' : 'text-text-primary',
+            'font-display font-semibold text-xl md:text-2xl leading-tight flex-1',
+            isAccent ? 'text-white' : 'text-heading',
           ].join(' ')}
         >
           {item.title}
@@ -77,11 +77,16 @@ function ProgramCard({ item }: ProgramCardProps) {
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-white/10">
+          <div
+            className={[
+              'flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t',
+              isAccent ? 'border-white/20' : 'border-border-col',
+            ].join(' ')}
+          >
             {item.tracks !== undefined && item.tracks > 0 && (
               <span
                 className={[
-                  'font-body text-xs uppercase tracking-label',
+                  'font-body text-xs font-medium tracking-wide',
                   isAccent ? 'text-white/80' : 'text-text-secondary',
                 ].join(' ')}
               >
@@ -90,7 +95,7 @@ function ProgramCard({ item }: ProgramCardProps) {
             )}
             <span
               className={[
-                'font-body text-xs uppercase tracking-label',
+                'font-body text-xs font-medium tracking-wide',
                 isAccent ? 'text-white/80' : 'text-text-secondary',
               ].join(' ')}
             >
@@ -116,27 +121,25 @@ function ProgramCard({ item }: ProgramCardProps) {
 
 export function ProgramsGrid({ eyebrow, heading, cta, items }: ProgramsGridProps) {
   return (
-    <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20">
+    <section className="bg-bg-primary py-20 px-6 sm:px-10 lg:px-20 border-b border-border-col">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8">
         <div className="flex flex-col gap-3">
-          <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none">
-            {eyebrow}
-          </p>
-          <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight">
+          <p className="section-label leading-none">{eyebrow}</p>
+          <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight">
             {heading}
           </h2>
         </div>
         <Link
           href={cta.href}
-          className="flex-shrink-0 inline-block border border-border-col text-text-secondary font-body text-sm uppercase tracking-label px-6 py-3 hover:border-accent hover:text-accent transition-colors duration-200"
+          className="flex-shrink-0 inline-flex items-center rounded-card border border-border-col bg-white text-text-secondary font-body text-sm font-medium px-6 py-3 hover:border-accent hover:text-accent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           {cta.label} →
         </Link>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-[2px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
         {items.map((item) => (
           <ProgramCard key={item.href} item={item} />
         ))}

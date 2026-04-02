@@ -117,7 +117,7 @@ export default function SearchOverlay() {
       aria-label="Поиск по сайту"
     >
       <div
-        className="w-full max-w-[640px] bg-bg-primary border border-border-col shadow-2xl"
+        className="w-full max-w-[640px] bg-white border border-border-col rounded-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Input row */}
@@ -129,13 +129,13 @@ export default function SearchOverlay() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Поиск по сайту..."
-            className="flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-sm h-14 outline-none font-body"
+            className="flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-sm h-14 outline-none font-body rounded-none"
             aria-label="Поисковый запрос"
             autoComplete="off"
           />
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-primary transition-colors p-1"
+            className="text-text-muted hover:text-accent transition-colors p-1 rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label="Закрыть поиск"
           >
             <X size={16} />

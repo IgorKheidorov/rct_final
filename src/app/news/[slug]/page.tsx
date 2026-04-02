@@ -122,7 +122,7 @@ export default async function NewsArticlePage({ params }: Props) {
         )}
 
         {/* Body */}
-        <div className="prose prose-invert max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary prose-img:border prose-img:border-border-col">
+        <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary prose-img:border prose-img:border-border-col">
           <MDXRemote source={content} />
         </div>
 

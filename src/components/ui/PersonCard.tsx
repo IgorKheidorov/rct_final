@@ -43,7 +43,7 @@ export default function PersonCard({
           className="w-16 h-16 rounded-full bg-accent flex items-center justify-center flex-shrink-0 select-none"
           aria-hidden="true"
         >
-          <span className="font-display text-text-primary text-lg leading-none">{initials}</span>
+          <span className="font-display text-white text-lg leading-none">{initials}</span>
         </div>
       )}
 

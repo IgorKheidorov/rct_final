@@ -201,7 +201,7 @@ export default async function BachelorProgramPage({ params }: Props) {
             <h2 id="content-heading" className="font-display text-lg uppercase tracking-label text-text-secondary mb-6">
               О специальности
             </h2>
-            <div className="prose prose-invert max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary">
+            <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary">
               <MDXRemote source={mdxContent} />
             </div>
           </section>

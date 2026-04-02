@@ -6,28 +6,54 @@ export const metadata: Metadata = {
     'Расписание занятий и сессий, учебный календарь 2025–2026, шаблоны дипломных и курсовых работ, образовательный портал.',
 }
 
-/** Карточка на фоне bg-bg-primary */
 const surfaceOnPrimary =
-  'rounded-card border border-border-col bg-bg-section/95 p-2 sm:p-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]'
+  'rounded-card border border-border-col bg-white p-2 sm:p-0 shadow-sm'
 
-/** Карточка на фоне bg-bg-section */
 const surfaceOnSection =
-  'rounded-card border border-border-col bg-bg-primary/35 p-2 sm:p-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]'
+  'rounded-card border border-border-col bg-white p-2 sm:p-0 shadow-sm'
 
 const rowLinkSchedule =
-  'flex w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-bg-primary/30 hover:text-accent'
+  'flex min-h-[44px] w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
 const rowLinkDownloadOnSection =
-  'flex w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-bg-section/40 hover:text-accent'
+  'flex min-h-[44px] w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
 const rowLinkResource =
-  'flex w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-bg-section/35 hover:text-accent'
+  'flex min-h-[44px] w-full items-center gap-3 rounded-card px-3 py-3 font-body text-sm text-text-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
 const calendarSurface =
-  'rounded-card border border-border-col bg-bg-section/90 p-4 sm:p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]'
+  'rounded-card border border-border-col bg-white p-4 sm:p-5 shadow-sm'
 
 const calendarSurfaceAlt =
-  'rounded-card border border-border-col bg-bg-primary/35 p-4 sm:p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]'
+  'rounded-card border border-border-col bg-slate-50 p-4 sm:p-5 shadow-sm'
+
+const EDU_HUB = [
+  {
+    id: 'schedules',
+    title: 'Расписание',
+    description: 'Занятия по курсам и магистратуре в Google Таблицах.',
+  },
+  {
+    id: 'exams',
+    title: 'Экзаменационные сессии',
+    description: 'Графики экзаменов для бакалавров и магистрантов.',
+  },
+  {
+    id: 'calendar',
+    title: 'Учебный календарь',
+    description: 'Сроки семестров, сессий и каникул по программам.',
+  },
+  {
+    id: 'documents',
+    title: 'Шаблоны и инструкции',
+    description: 'Дипломные и курсовые работы: оформление и методички.',
+  },
+  {
+    id: 'resources',
+    title: 'Полезные ссылки',
+    description: 'Портал, библиотека, соцсети и документы БГУ.',
+  },
+] as const
 
 const SCHEDULES = [
   {
@@ -102,12 +128,10 @@ const RESOURCES = [
 export default function EducationPage() {
   return (
     <div data-pagefind-body>
-      <section className="bg-bg-primary pt-32 pb-16 px-6 sm:px-10 lg:px-20 border-b border-border-col">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-6">
-          // ОБУЧЕНИЕ
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl text-text-primary leading-[0.97] tracking-tight mb-4">
-          УЧЕБНЫЙ ПРОЦЕСС
+      <section className="bg-gradient-to-b from-slate-50 to-bg-primary pt-32 pb-12 px-6 sm:px-10 lg:px-20 border-b border-border-col">
+        <p className="section-label mb-6 leading-none">Обучение</p>
+        <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-heading leading-[1.05] tracking-tight mb-4 max-w-2xl">
+          Учебный процесс
         </h1>
         <p className="font-body text-base text-text-secondary leading-relaxed max-w-xl">
           Расписание, сессии, учебный календарь и методические материалы
@@ -115,13 +139,32 @@ export default function EducationPage() {
       </section>
 
       <section
+        className="bg-bg-section py-12 px-6 sm:px-10 lg:px-20 border-b border-border-col"
+        aria-label="Разделы страницы"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {EDU_HUB.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className="group flex flex-col rounded-card border border-border-col bg-white p-6 shadow-sm transition-all hover:border-accent/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <h2 className="font-display font-semibold text-lg text-heading mb-2">{item.title}</h2>
+              <p className="font-body text-sm text-text-secondary leading-relaxed mb-4 flex-1">
+                {item.description}
+              </p>
+              <span className="font-body text-sm font-medium text-accent">Перейти →</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section
         id="schedules"
         className="bg-bg-primary py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col"
       >
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
-          // РАСПИСАНИЕ ЗАНЯТИЙ
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight mb-8">
+        <p className="section-label mb-8 leading-none">Расписание занятий</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight mb-8">
           Расписание
         </h2>
         <div className={surfaceOnPrimary}>
@@ -149,15 +192,13 @@ export default function EducationPage() {
         id="exams"
         className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col"
       >
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
-          // РАСПИСАНИЕ СЕССИЙ
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight mb-10">
+        <p className="section-label mb-8 leading-none">Расписание сессий</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight mb-10">
           Экзаменационные сессии
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Бакалавриат 2024–2025
             </p>
             <div className={surfaceOnSection}>
@@ -176,7 +217,7 @@ export default function EducationPage() {
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Магистратура 2025–2026
             </p>
             <div className={surfaceOnSection}>
@@ -201,15 +242,13 @@ export default function EducationPage() {
         id="calendar"
         className="bg-bg-primary py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col"
       >
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
-          // УЧЕБНЫЙ КАЛЕНДАРЬ 2025–2026
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight mb-10">
+        <p className="section-label mb-8 leading-none">Учебный календарь 2025–2026</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight mb-10">
           Учебный год
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Бакалавриат
             </p>
             <div className={calendarSurface}>
@@ -236,7 +275,7 @@ export default function EducationPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Магистратура
             </p>
             <div className={calendarSurfaceAlt}>
@@ -267,15 +306,13 @@ export default function EducationPage() {
         id="documents"
         className="bg-bg-section py-16 px-6 sm:px-10 lg:px-20 border-b border-border-col"
       >
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
-          // МЕТОДИЧЕСКИЕ МАТЕРИАЛЫ
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight mb-10">
+        <p className="section-label mb-8 leading-none">Методические материалы</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight mb-10">
           Шаблоны и инструкции
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Дипломная работа
             </p>
             <div className={surfaceOnSection}>
@@ -294,7 +331,7 @@ export default function EducationPage() {
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <p className="font-body text-[11px] text-text-muted uppercase tracking-label px-1">
+            <p className="font-body text-[11px] font-medium tracking-wide text-text-muted px-1">
               Курсовая работа
             </p>
             <div className={surfaceOnSection}>
@@ -316,10 +353,8 @@ export default function EducationPage() {
       </section>
 
       <section id="resources" className="bg-bg-primary py-16 px-6 sm:px-10 lg:px-20">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-8">
-          // ПОЛЕЗНЫЕ ССЫЛКИ
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight mb-8">
+        <p className="section-label mb-8 leading-none">Полезные ссылки</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight mb-8">
           Ресурсы
         </h2>
         <div className={surfaceOnPrimary}>

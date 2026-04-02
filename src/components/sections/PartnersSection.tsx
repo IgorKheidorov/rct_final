@@ -38,7 +38,7 @@ function PartnerLogo({ partner }: LogoProps) {
       aria-label={partner.name}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex items-center justify-center px-6 py-5 border-r border-border-col last:border-r-0 min-w-[120px] flex-1"
+      className="flex items-center justify-center px-6 py-5 border-r border-border-col last:border-r-0 min-w-[120px] flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
     >
       <Image
         src={`/images/partners/${partner.file}`}
@@ -61,16 +61,14 @@ export function PartnersSection({ eyebrow, heading, partners }: PartnersSectionP
     <section className="bg-bg-section py-20 px-6 sm:px-10 lg:px-20 border-t border-border-col">
       {/* Header */}
       <div className="flex flex-col gap-3 mb-12">
-        <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none">
-          {eyebrow}
-        </p>
-        <h2 className="font-display text-3xl md:text-4xl text-text-primary leading-tight">
+        <p className="section-label leading-none">{eyebrow}</p>
+        <h2 className="font-display font-semibold text-3xl md:text-4xl text-heading leading-tight">
           {heading}
         </h2>
       </div>
 
       {/* Logos row */}
-      <div className="border border-border-col overflow-x-auto">
+      <div className="border border-border-col rounded-card bg-white shadow-sm overflow-x-auto">
         <div className="flex flex-nowrap divide-x-0 min-w-max">
           {list.map((partner) => (
             <PartnerLogo key={partner.name} partner={partner} />

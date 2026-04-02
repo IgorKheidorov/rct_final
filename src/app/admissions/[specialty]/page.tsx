@@ -120,7 +120,7 @@ export default async function AdmissionsSpecialtyPage({ params }: Props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 space-y-12">
         {/* MDX content */}
         {mdxContent ? (
-          <div className="prose prose-invert max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary">
+          <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary">
             <MDXRemote source={mdxContent} />
           </div>
         ) : (
@@ -131,13 +131,13 @@ export default async function AdmissionsSpecialtyPage({ params }: Props) {
         <div className="flex flex-col sm:flex-row gap-4 border-t border-border-col pt-8">
           <Link
             href={spec.programHref}
-            className="inline-flex items-center justify-center bg-accent text-text-primary font-display text-sm uppercase tracking-label px-7 py-3 hover:bg-accent/90 transition-colors"
+            className="inline-flex items-center justify-center bg-accent text-white font-display text-sm font-semibold px-7 py-3 hover:bg-accent/90 transition-colors"
           >
             О программе
           </Link>
           <Link
             href="/admissions"
-            className="inline-flex items-center justify-center border border-border-col text-text-secondary font-display text-sm uppercase tracking-label px-7 py-3 hover:border-text-secondary hover:text-text-primary transition-colors"
+            className="inline-flex items-center justify-center border border-border-col text-text-secondary font-display text-sm font-medium px-7 py-3 hover:border-accent hover:text-accent transition-colors"
           >
             ← Все специальности
           </Link>

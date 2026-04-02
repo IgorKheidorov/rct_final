@@ -45,14 +45,17 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 h-[72px] bg-bg-primary border-b border-border-col">
+      <header className="fixed top-0 left-0 right-0 z-40 h-[72px] bg-bg-primary border-b border-border-col shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 lg:px-8 h-full flex items-center gap-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <Link
+            href="/"
+            className="flex items-center gap-3 shrink-0 group rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
             <span className="w-2 h-8 bg-accent" aria-hidden="true" />
-            <span className="font-display text-text-primary text-xl leading-none uppercase tracking-tight group-hover:text-accent transition-colors">
+            <span className="font-display font-semibold text-text-primary text-xl leading-none tracking-tight group-hover:text-accent transition-colors">
               ФРКТ
-              <span className="font-body text-text-secondary text-xs ml-1.5 normal-case tracking-normal">
+              <span className="font-body font-medium text-text-secondary text-xs ml-1.5 tracking-normal">
                 БГУ
               </span>
             </span>
@@ -64,7 +67,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-2 text-text-secondary text-sm font-body hover:text-text-primary transition-colors whitespace-nowrap"
+                className="px-3 py-2 text-text-secondary text-sm font-body hover:text-accent rounded-card transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               >
                 {link.label}
               </Link>
@@ -75,7 +78,7 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-3 ml-auto">
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 border border-border-col text-text-secondary hover:text-text-primary hover:border-text-secondary transition-colors text-xs font-body"
+              className="flex items-center gap-2 px-3 py-1.5 border border-border-col rounded-card text-text-secondary hover:text-accent hover:border-accent transition-colors text-xs font-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               aria-label="Открыть поиск"
             >
               <Search size={14} />
@@ -83,9 +86,9 @@ export default function Header() {
             </button>
             <Link
               href="/admissions"
-              className="flex items-center px-4 py-2 bg-accent text-text-primary font-display text-[13px] uppercase tracking-wide hover:bg-accent/90 transition-colors"
+              className="flex items-center px-4 py-2 bg-accent text-white font-display text-sm font-semibold hover:bg-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
-              ПОСТУПИТЬ →
+              Поступить →
             </Link>
           </div>
 
@@ -130,7 +133,7 @@ export default function Header() {
         aria-label="Мобильное меню"
       >
         <div className="flex items-center justify-between px-5 h-[72px] border-b border-border-col">
-          <span className="font-display text-text-primary text-lg uppercase">Меню</span>
+          <span className="font-display font-semibold text-text-primary text-lg">Меню</span>
           <button
             onClick={() => setMobileOpen(false)}
             className="text-text-secondary hover:text-text-primary transition-colors"
@@ -155,9 +158,9 @@ export default function Header() {
             <Link
               href="/admissions"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center justify-center px-4 py-3 bg-accent text-text-primary font-display text-[13px] uppercase tracking-wide hover:bg-accent/90 transition-colors w-full"
+              className="flex items-center justify-center px-4 py-3 bg-accent text-white font-display text-sm font-semibold hover:bg-accent/90 transition-colors w-full"
             >
-              ПОСТУПИТЬ →
+              Поступить →
             </Link>
           </div>
         </nav>

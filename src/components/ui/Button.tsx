@@ -20,9 +20,9 @@ interface ButtonProps {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-text-primary hover:bg-accent/90 border border-accent',
+    'bg-accent text-white hover:bg-accent/90 border border-accent',
   secondary:
-    'bg-transparent text-text-primary border border-border-col hover:border-text-secondary hover:text-text-primary',
+    'bg-transparent text-text-primary border border-border-col hover:border-accent hover:text-accent',
   ghost:
     'bg-transparent text-text-secondary hover:text-text-primary border border-transparent',
 }
@@ -34,7 +34,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 }
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center font-display uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:pointer-events-none'
+  'inline-flex items-center justify-center font-display font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:pointer-events-none'
 
 export default function Button({
   children,

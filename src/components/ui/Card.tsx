@@ -10,9 +10,9 @@ interface CardProps {
 
 export default function Card({ children, className = '', accent = false, href }: CardProps) {
   const base =
-    'block bg-bg-section border border-border-col transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
-  const accentClass = accent ? 'border-l-2 border-l-accent' : ''
-  const hoverClass = href ? 'hover:border-accent hover:bg-bg-primary cursor-pointer' : ''
+    'block rounded-card bg-white border border-border-col shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2'
+  const accentClass = accent ? 'border-l-[3px] border-l-accent' : ''
+  const hoverClass = href ? 'hover:border-accent hover:shadow-md cursor-pointer' : ''
 
   const classes = [base, accentClass, hoverClass, className].filter(Boolean).join(' ')
 

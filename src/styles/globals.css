@@ -1,15 +1,10 @@
-@import '@fontsource/archivo-black';
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-ibm-plex), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -18,56 +13,54 @@
     @apply bg-bg-primary text-text-primary;
   }
 
-  /* Focus styles for accessibility */
   :focus-visible {
-    outline: 2px solid #1A56DB;
+    outline: 2px solid #1a56db;
     outline-offset: 2px;
   }
 
-  /* Skip to content */
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:text-sm;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
 @layer components {
-  /* Section eyebrow label */
   .section-label {
-    @apply font-body text-[11px] text-accent uppercase tracking-label;
+    @apply font-body text-[11px] font-semibold text-accent tracking-wide;
   }
 
-  /* Accent bar */
   .accent-bar {
     @apply w-10 h-[3px] bg-accent;
   }
 
-  /* Card gap grid */
   .card-grid {
     @apply gap-[2px];
   }
 
-  /* Display heading */
   .display-heading {
-    @apply font-display text-text-primary leading-[0.95] tracking-tight;
+    @apply font-display font-semibold text-heading leading-tight tracking-tight;
   }
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #141416;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2C2C2E;
-  border-radius: 3px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1A56DB;
+  background: #1a56db;
 }
 
-/* Pagefind highlight */
 mark {
   background: rgba(26, 86, 219, 0.3);
   color: inherit;

@@ -5,30 +5,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'bg-primary': '#1C1C1E',
-        'bg-section': '#141416',
-        'accent': '#1A56DB',
-        'text-primary': '#FFFFFF',
-        'text-secondary': '#8A8A8E',
-        'text-muted': '#6B6B70',
-        'border-col': '#2C2C2E',
+        /** Семантика: основной фон страницы (светлый портал) */
+        page: '#ffffff',
+        /** Чередующиеся секции / подложка */
+        surface: '#f1f5f9',
+        /** Карточки и приподнятые блоки */
+        'surface-elevated': '#ffffff',
+        /** Legacy aliases — те же значения, что page/surface */
+        'bg-primary': '#ffffff',
+        'bg-section': '#f1f5f9',
+        accent: '#1A56DB',
+        'text-primary': '#0f172a',
+        'text-secondary': '#475569',
+        'text-muted': '#64748b',
+        /** Заголовки — чуть глубже основного текста (ИТ-вуз, спокойная иерархия) */
+        heading: '#0c1222',
+        'border-col': '#e2e8f0',
       },
       fontFamily: {
-        display: ['"Archivo Black"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        sans: ['var(--font-ibm-plex)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-ibm-plex)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-ibm-plex)', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         label: '0.2em',
       },
       borderRadius: {
         /** Карточки и группы списков (Обучение и др.) */
-        card: '6px',
+        card: '8px',
       },
       typography: ({ theme }: { theme: (key: string) => string }) => ({
         DEFAULT: {
           css: {
             '--tw-prose-body': theme('colors.text-secondary'),
-            '--tw-prose-headings': theme('colors.text-primary'),
+            '--tw-prose-headings': theme('colors.heading'),
             '--tw-prose-lead': theme('colors.text-secondary'),
             '--tw-prose-links': theme('colors.accent'),
             '--tw-prose-bold': theme('colors.text-primary'),
@@ -44,7 +54,8 @@ const config: Config = {
             '--tw-prose-th-borders': theme('colors.border-col'),
             '--tw-prose-td-borders': theme('colors.border-col'),
             h2: {
-              fontFamily: '"Archivo Black", sans-serif',
+              fontFamily: 'var(--font-ibm-plex), system-ui, sans-serif',
+              fontWeight: '600',
               fontSize: '1.25rem',
               borderBottom: `1px solid ${theme('colors.border-col')}`,
               paddingBottom: '0.5rem',
@@ -52,16 +63,17 @@ const config: Config = {
               marginBottom: '0.75rem',
             },
             h3: {
-              fontFamily: '"Archivo Black", sans-serif',
+              fontFamily: 'var(--font-ibm-plex), system-ui, sans-serif',
+              fontWeight: '600',
               fontSize: '1rem',
               marginTop: '1.5rem',
               marginBottom: '0.5rem',
             },
             h4: {
-              fontFamily: '"Archivo Black", sans-serif',
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
+              fontFamily: 'var(--font-ibm-plex), system-ui, sans-serif',
+              fontWeight: '600',
+              fontSize: '0.8125rem',
+              letterSpacing: '0.02em',
               color: theme('colors.text-muted'),
               marginTop: '1.25rem',
               marginBottom: '0.4rem',

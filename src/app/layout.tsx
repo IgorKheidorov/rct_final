@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
+import { IBM_Plex_Sans } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { SearchProvider } from '@/components/search/SearchContext'
@@ -18,15 +19,22 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1C1C1E',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 }
 
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-ibm-plex',
+  display: 'swap',
+})
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
-      <body>
+    <html lang="ru" className={ibmPlexSans.variable}>
+      <body className={ibmPlexSans.className}>
         <SearchProvider>
           <a href="#main-content" className="skip-link">
             Перейти к содержимому

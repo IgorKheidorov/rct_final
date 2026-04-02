@@ -50,7 +50,7 @@ const SOCIAL_LINKS = [
 
 const FOOTER_COLS = [
   {
-    heading: 'ФРКТ БГУ',
+    heading: 'Факультет',
     links: [
       { label: 'О факультете',  href: '/faculty' },
       { label: 'История',       href: '/faculty#history' },
@@ -61,7 +61,7 @@ const FOOTER_COLS = [
     ],
   },
   {
-    heading: 'ОБУЧЕНИЕ',
+    heading: 'Обучение',
     links: [
       { label: 'Бакалавриат',        href: '/programs/bachelor' },
       { label: 'Магистратура',       href: '/programs/master' },
@@ -71,7 +71,7 @@ const FOOTER_COLS = [
     ],
   },
   {
-    heading: 'АБИТУРИЕНТАМ',
+    heading: 'Абитуриентам',
     links: [
       { label: 'Как поступить',            href: '/admissions' },
       { label: 'Специальности',            href: '/programs' },
@@ -85,12 +85,12 @@ const FOOTER_COLS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-bg-section border-t border-border-col">
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-8 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+    <footer className="bg-slate-100 border-t border-border-col">
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-8 py-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-10">
           {FOOTER_COLS.map((col) => (
             <div key={col.heading}>
-              <h3 className="font-display text-text-primary text-xs uppercase tracking-[0.15em] mb-5">
+              <h3 className="font-body font-semibold text-text-primary text-sm tracking-wide mb-6">
                 {col.heading}
               </h3>
               <ul className="space-y-2.5">
@@ -98,7 +98,7 @@ export default function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-text-secondary text-sm font-body hover:text-text-primary transition-colors"
+                      className="text-text-secondary text-sm font-body hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
                     >
                       {link.label}
                     </Link>
@@ -110,8 +110,8 @@ export default function Footer() {
 
           {/* Contacts column */}
           <div>
-            <h3 className="font-display text-text-primary text-xs uppercase tracking-[0.15em] mb-5">
-              КОНТАКТЫ
+            <h3 className="font-body font-semibold text-text-primary text-sm tracking-wide mb-6">
+              Контакты
             </h3>
             <address className="not-italic space-y-3">
               <p className="text-text-secondary text-sm font-body leading-relaxed">
@@ -122,7 +122,7 @@ export default function Footer() {
               <p>
                 <a
                   href="tel:+375172095818"
-                  className="text-text-secondary text-sm font-body hover:text-text-primary transition-colors"
+                  className="text-text-secondary text-sm font-body hover:text-accent transition-colors"
                 >
                   +375 (17) 209-58-18
                 </a>
@@ -130,7 +130,7 @@ export default function Footer() {
               <p>
                 <a
                   href="mailto:rct@bsu.by"
-                  className="text-text-secondary text-sm font-body hover:text-text-primary transition-colors"
+                  className="text-text-secondary text-sm font-body hover:text-accent transition-colors"
                 >
                   rct@bsu.by
                 </a>
@@ -140,7 +140,7 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-border-col mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="border-t border-border-col mt-14 pt-10 flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Copyright */}
           <div className="flex flex-col sm:flex-row items-center gap-4 text-text-muted text-xs font-body">
             <span>© 2025 ФРКТ БГУ. Все права защищены.</span>
@@ -166,7 +166,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={s.name}
-                className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary border border-border-col hover:border-text-secondary transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-accent border border-border-col hover:border-accent hover:bg-white rounded-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {s.icon}
               </a>

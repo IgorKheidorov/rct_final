@@ -12,7 +12,7 @@ export function AboutTeaser({ eyebrow, headline, body, achievements, cta }: Abou
   return (
     <section className="bg-bg-section py-20 px-6 sm:px-10 lg:px-20 border-t border-border-col">
       {/* Section label */}
-      <p className="font-body text-[11px] text-accent uppercase tracking-label leading-none mb-12">
+      <p className="section-label mb-12 leading-none">
         {eyebrow}
       </p>
 
@@ -28,7 +28,7 @@ export function AboutTeaser({ eyebrow, headline, body, achievements, cta }: Abou
           <div className="mt-auto">
             <Link
               href={cta.href}
-              className="inline-block bg-accent text-white font-body font-semibold text-sm uppercase tracking-label px-8 py-4 hover:bg-accent/90 transition-colors duration-200"
+              className="inline-flex items-center justify-center rounded-card bg-accent text-white font-body font-semibold text-sm px-8 py-4 hover:bg-accent/90 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               {cta.label} →
             </Link>
