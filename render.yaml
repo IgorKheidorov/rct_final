@@ -1,9 +1,9 @@
 services:
   - type: web
     name: frkt-bsu
-    env: static
+    env: node
     buildCommand: pnpm install --frozen-lockfile && pnpm build:full
-    staticPublishPath: out
+    startCommand: npx serve@latest out
     pullRequestPreviewsEnabled: false
     envVars:
       - key: NODE_VERSION
