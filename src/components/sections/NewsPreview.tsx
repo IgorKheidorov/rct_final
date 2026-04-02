@@ -23,7 +23,7 @@ function FeaturedCard({ item }: FeaturedCardProps) {
   return (
     <Link
       href={`/news/${item.slug}`}
-      className="group relative flex flex-col justify-end overflow-hidden min-h-[420px] md:min-h-full rounded-card border border-border-col shadow-sm hover:shadow-md transition-shadow"
+      className="group relative flex flex-col justify-end overflow-hidden min-h-[420px] md:min-h-full rounded-card border border-border-col bg-bg-section shadow-sm hover:shadow-md transition-shadow"
     >
       {item.image ? (
         <>
@@ -32,9 +32,9 @@ function FeaturedCard({ item }: FeaturedCardProps) {
             alt={item.title}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-contain object-center transition-opacity duration-300 group-hover:opacity-95"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-slate-900/10 pointer-events-none" />
         </>
       ) : (
         <div className="absolute inset-0 bg-slate-200" />
@@ -78,13 +78,13 @@ function SmallCard({ item }: SmallCardProps) {
       className="group flex gap-4 bg-white p-5 rounded-card border border-border-col shadow-sm hover:border-accent/50 hover:shadow-md transition-all duration-200"
     >
       {item.image && (
-        <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden rounded-card">
+        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-card border border-border-col bg-bg-section">
           <Image
             src={item.image}
             alt={item.title}
             fill
             sizes="80px"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-contain object-center"
           />
         </div>
       )}

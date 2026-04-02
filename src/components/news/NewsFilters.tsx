@@ -80,13 +80,13 @@ export default function NewsFilters({ items }: NewsFiltersProps) {
               className="group flex flex-col sm:flex-row gap-6 bg-bg-section p-6 hover:bg-bg-primary transition-colors duration-200 border border-transparent hover:border-border-col"
             >
               {item.image && (
-                <div className="relative w-full sm:w-36 h-36 flex-shrink-0 overflow-hidden">
+                <div className="relative h-44 w-full shrink-0 overflow-hidden bg-bg-section border border-border-col sm:h-36 sm:w-36">
                   <Image
                     src={item.image}
                     alt={item.title}
                     fill
                     sizes="(max-width: 640px) 100vw, 144px"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-contain object-center"
                   />
                 </div>
               )}

@@ -45,6 +45,11 @@ export default function NewsPage() {
         eyebrow="Новости и события"
         title="Новости ФРКТ"
         subtitle="Последние события, достижения студентов и научные новости факультета."
+        coverImage={{
+          src: '/images/specialty_digital_tech.jpg',
+          alt: 'Новости и события факультета',
+          priority: true,
+        }}
       />
 
       <PageHub items={NEWS_HUB} />
@@ -77,12 +82,13 @@ export default function NewsPage() {
               className="bg-bg-section border border-border-col hover:border-accent/50 transition-colors group"
             >
               {item.image && (
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-bg-section border-b border-border-col">
                   <Image
                     src={item.image}
                     alt={item.title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-contain object-center"
                   />
                 </div>
               )}

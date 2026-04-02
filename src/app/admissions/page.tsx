@@ -117,6 +117,11 @@ export default function AdmissionsPage() {
         eyebrow="Абитуриентам"
         title="Поступление 2026"
         subtitle="Факультет радиофизики и компьютерных технологий — единственный физико-технический факультет в Республике Беларусь"
+        coverImage={{
+          src: '/images/specialty_digital_tech.jpg',
+          alt: 'Абитуриентам: современные технологии и специальности ФРКТ',
+          priority: true,
+        }}
       />
 
       <PageHub items={ADMISSIONS_HUB} />

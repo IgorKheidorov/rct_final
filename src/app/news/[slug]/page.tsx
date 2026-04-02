@@ -6,7 +6,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import matter from 'gray-matter'
-import { getAllNews, formatDate } from '@/lib/utils'
+import { getAllNews, formatDate, resolveNewsImageSrc } from '@/lib/utils'
 
 type Props = { params: { slug: string } }
 
@@ -59,7 +59,7 @@ export default async function NewsArticlePage({ params }: Props) {
     )
     .slice(0, 3)
 
-  const imageExists = image && fs.existsSync(path.join(process.cwd(), 'public', image))
+  const heroImage = resolveNewsImageSrc(image)
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary">
@@ -107,19 +107,20 @@ export default async function NewsArticlePage({ params }: Props) {
           {title}
         </h1>
 
-        {/* Image */}
-        {imageExists && (
-          <div className="relative aspect-video w-full overflow-hidden border border-border-col mb-10">
-            <Image
-              src={image!}
-              alt={title}
-              fill
-              sizes="(max-width: 896px) 100vw, 896px"
-              className="object-cover"
-              priority
-            />
-          </div>
-        )}
+        {heroImage ? (
+          <figure className="relative mb-10">
+            <div className="relative aspect-video w-full overflow-hidden border border-border-col bg-bg-section">
+              <Image
+                src={heroImage}
+                alt={title}
+                fill
+                sizes="(max-width: 896px) 100vw, 896px"
+                className="object-contain object-center"
+                priority
+              />
+            </div>
+          </figure>
+        ) : null}
 
         {/* Body */}
         <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-text-primary prose-a:text-accent prose-strong:text-text-primary prose-p:text-text-secondary prose-li:text-text-secondary prose-img:border prose-img:border-border-col">

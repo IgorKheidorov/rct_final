@@ -3,6 +3,25 @@ import path from 'path'
 import matter from 'gray-matter'
 import type { NewsItem } from './types'
 
+/** База загрузок CMS (как на старом сайте digital-faculty.bsu.by) */
+const NEWS_CMS_UPLOAD_BASE = 'https://digital-faculty.bsu.by/data/uploads/'
+
+/**
+ * Путь к превью в frontmatter (`/images/news/...`): если файла нет в `public`,
+ * подставляем URL с CMS — имена файлов совпадают с экспортом старого сайта.
+ */
+export function resolveNewsImageSrc(imagePath: string | undefined): string | undefined {
+  if (!imagePath) return undefined
+  const clean = imagePath.replace(/^\//, '')
+  const abs = path.join(process.cwd(), 'public', clean)
+  if (fs.existsSync(abs)) {
+    return imagePath.startsWith('/') ? imagePath : `/${clean}`
+  }
+  const file = path.basename(imagePath)
+  if (!file) return undefined
+  return `${NEWS_CMS_UPLOAD_BASE}${file}`
+}
+
 export function getContentPath(relativePath: string): string {
   return path.join(process.cwd(), 'src', 'content', relativePath)
 }
@@ -26,13 +45,14 @@ export function getAllNews(): NewsItem[] {
     const slug = filename.replace(/\.mdx$/, '')
     const filePath = path.join(newsDir, filename)
     const { frontmatter } = readMdxFile(filePath)
+    const rawImage = frontmatter.image as string | undefined
     return {
       slug,
       title: (frontmatter.title as string) || '',
       date: (frontmatter.date as string) || '',
       tags: (frontmatter.tags as string[]) || [],
       excerpt: (frontmatter.excerpt as string) || '',
-      image: frontmatter.image as string | undefined,
+      image: resolveNewsImageSrc(rawImage),
       author: frontmatter.author as string | undefined,
     }
   })

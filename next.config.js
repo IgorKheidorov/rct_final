@@ -11,6 +11,13 @@ const nextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'digital-faculty.bsu.by',
+        pathname: '/data/uploads/**',
+      },
+    ],
   },
   // На Windows параллельная сборка/трассировка иногда даёт PageNotFoundError при
   // collect page data или ENOENT на *.nft.json при collect-build-traces.

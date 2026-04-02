@@ -77,6 +77,11 @@ export default function SciencePage() {
         eyebrow="Наука и исследования"
         title="Научная деятельность ФРКТ"
         subtitle="Фундаментальные и прикладные исследования, международные конференции, 7 научных лабораторий, 2 ведущие научные школы"
+        coverImage={{
+          src: '/images/masters_aerospace.jpg',
+          alt: 'Наука и исследования: аэрокосмические и инженерные направления ФРКТ',
+          priority: true,
+        }}
       />
 
       <PageHub items={SCIENCE_HUB} />

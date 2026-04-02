@@ -43,6 +43,11 @@ export default function ContactsPage() {
         eyebrow="Контакты"
         title="Свяжитесь с нами"
         subtitle="Адрес, телефоны, email и как добраться до факультета."
+        coverImage={{
+          src: '/images/faculty_building.jpg',
+          alt: 'Корпус факультета радиофизики и компьютерных технологий БГУ',
+          priority: true,
+        }}
       />
 
       <PageHub items={CONTACTS_HUB} />

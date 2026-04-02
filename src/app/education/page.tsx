@@ -135,6 +135,11 @@ export default function EducationPage() {
         eyebrow="Обучение"
         title="Учебный процесс"
         subtitle="Расписание, сессии, учебный календарь и методические материалы"
+        coverImage={{
+          src: '/images/specialty_digital_tech.jpg',
+          alt: 'Студенты и учебные технологии, иллюстрация раздела обучения',
+          priority: true,
+        }}
       />
 
       <PageHub items={EDU_HUB} />

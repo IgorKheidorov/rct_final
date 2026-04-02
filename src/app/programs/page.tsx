@@ -110,6 +110,11 @@ export default function ProgramsPage() {
         eyebrow="Программы"
         title="Программы обучения"
         subtitle="4 специальности бакалавриата, 9 направлений подготовки. 3 специальности магистратуры, обучение на русском и английском языках."
+        coverImage={{
+          src: '/images/masters_program_1.jpg',
+          alt: 'Образовательные программы бакалавриата и магистратуры ФРКТ',
+          priority: true,
+        }}
       />
 
       <PageHub items={PROGRAMS_HUB} />
