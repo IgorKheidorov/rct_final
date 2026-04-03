@@ -299,21 +299,25 @@ export default function AdmissionsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3">
+            <p className="font-body text-[11px] text-text-muted uppercase tracking-label mb-1">
+              Документы
+            </p>
             {[
-              { title: '20 вопросов для вступительного испытания (PDF)', file: '/docs/targeted_exam_questions.pdf' },
-              { title: 'Перечень необходимых документов', file: '/docs/targeted_documents_list.pdf' },
-              { title: 'Положение о целевой подготовке', file: '/docs/targeted_training_regulations.pdf' },
-              { title: 'Положение о вступительных испытаниях', file: '/docs/entrance_exam_regulations.pdf' },
-            ].map((doc) => (
-              <a
-                key={doc.file}
-                href={doc.file}
-                className="flex items-center gap-3 font-body text-sm text-text-secondary hover:text-accent transition-colors duration-200"
-                download
+              '20 вопросов для вступительного испытания (PDF)',
+              'Перечень необходимых документов',
+              'Положение о целевой подготовке',
+              'Положение о вступительных испытаниях',
+            ].map((title) => (
+              <div
+                key={title}
+                className="flex items-center gap-3 font-body text-sm text-text-muted"
               >
-                <span aria-hidden="true" className="text-accent">↓</span>
-                {doc.title}
-              </a>
+                <span aria-hidden="true" className="text-border-col">↓</span>
+                <span>{title}</span>
+                <span className="ml-auto font-body text-[10px] uppercase tracking-label text-text-muted border border-border-col px-2 py-0.5 shrink-0">
+                  скоро
+                </span>
+              </div>
             ))}
           </div>
         </div>
